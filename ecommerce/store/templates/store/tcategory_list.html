@@ -1,0 +1,175 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+  <!-- Page Banner -->
+  <section class="py-5 mb-5" style="background: url('{% static 'images/background-pattern.jpg' %}');">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between">
+        <h1 class="page-title pb-2">Shop</h1>
+        <nav class="breadcrumb fs-6">
+          <a class="breadcrumb-item nav-link" href="#">Home</a>
+          <a class="breadcrumb-item nav-link" href="#">Pages</a>
+          <span class="breadcrumb-item active" aria-current="page">Shop</span>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Grid Section -->
+  <section class="category-section py-5">
+    <div class="container">
+      <h2 class="mb-4">Categories</h2>
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3">
+        {% for category in categories %}
+          <div class="col">
+            <div class="category-item text-center">
+              <a href="{% url 'store:category_detail' category.slug %}">
+                {% if category.image %}
+                  <img src="{{ category.image.url }}" alt="{{ category.name }}" class="img-fluid" style="max-width:150px;">
+                {% endif %}
+                <h4>{{ category.name }}</h4>
+              </a>
+            </div>
+          </div>
+        {% empty %}
+          <p>No categories found.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Grid Section -->
+  <section class="product-section py-5">
+    <div class="container">
+      <div class="filter-shop d-flex justify-content-between">
+        <div class="showing-product">
+          <p>Showing {{ products|length }} results</p>
+        </div>
+        <div class="sort-by">
+          <select id="input-sort" class="form-control" onchange="location = this.value;">
+            <option value="?sort=default">Default sorting</option>
+            <option value="?sort=name_asc">Name (A - Z)</option>
+            <option value="?sort=name_desc">Name (Z - A)</option>
+            <option value="?sort=price_asc">Price (Low-High)</option>
+            <option value="?sort=price_desc">Price (High-Low)</option>
+            <option value="?sort=rating_desc">Rating (Highest)</option>
+            <option value="?sort=rating_asc">Rating (Lowest)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Product Grid (Shown Here) -->
+ <div class="product-grid row row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4">
+  {% for product in products %}
+    <div class="col">
+      <div class="product-item" style="display: flex !important; flex-direction: column !important; min-height: 450px !important; justify-content: space-between !important;">
+        <a href="#" class="btn-wishlist" style="align-self: flex-end !important;">
+          <svg width="24" height="24">
+            <use xlink:href="#heart"></use>
+          </svg>
+        </a>
+        <figure style="flex-grow: 0 !important; margin-bottom: 10px !important;">
+          <a href="{% url 'store:single-product' product.slug %}" title="{{ product.name }}">
+            <img src="{{ product.image.url }}" class="tab-image" style="width: 200px !important; height: 200px !important; object-fit: cover !important; display: block !important; margin: 0 auto !important;">
+          </a>
+        </figure>
+        <!-- Product name with consistent font size, alignment, and margin -->
+        <h3 style="font-size: 16px !important; text-align: center !important; margin: 10px 0 !important; flex-grow: 0 !important;">{{ product.name }}</h3>
+        <!-- Quantity with consistent font size, alignment, and margin -->
+        <span class="qty" style="font-size: 16px !important; text-align: center !important; display: block !important; margin: 5px 0 !important; flex-grow: 0 !important;">1 Unit</span>
+        <!-- Rating with consistent font size, alignment, and margin -->
+        <span class="rating" style="font-size: 16px !important; text-align: center !important; display: block !important; margin: 5px 0 !important; flex-grow: 0 !important;">
+          <svg width="24" height="24" class="text-primary">
+            <use xlink:href="#star-solid"></use>
+          </svg>
+          {{ product.rating }}
+        </span>
+        <!-- Price with consistent font size, alignment, and margin -->
+        <span class="price" style="font-size: 16px !important; text-align: center !important; display: block !important; margin: 5px 0 !important; flex-grow: 0 !important;">${{ product.price }}</span>
+        <div class="d-flex align-items-center justify-content-between" style="margin-top: auto !important; flex-grow: 0 !important;">
+          <div class="input-group product-qty">
+            <button type="button" class="quantity-left-minus btn btn-danger btn-number" data-type="minus">
+              <svg width="16" height="16">
+                <use xlink:href="#minus"></use>
+              </svg>
+            </button>
+            <input type="text" name="quantity" class="form-control input-number quantity" value="1">
+            <button type="button" class="quantity-right-plus btn btn-success btn-number" data-type="plus">
+              <svg width="16" height="16">
+                <use xlink:href="#plus"></use>
+              </svg>
+            </button>
+          </div>
+          <a href="" class="nav-link" style="font-size: 16px !important;">
+            Add to Cart
+            <svg width="24" height="24">
+              <use xlink:href="#cart"></use>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p style="font-size: 16px !important; text-align: center !important;">No products found.</p>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+<nav class="navigation paging-navigation text-center py-4">
+  <div class="pagination loop-pagination d-flex justify-content-center align-items-center">
+    {% if products.has_previous %}
+      <a href="?page={{ products.previous_page_number }}">
+        <svg class="chevron-left pe-3">
+          <use xlink:href="#chevron-left"></use>
+        </svg>
+      </a>
+    {% endif %}
+    <span aria-current="page" class="page-numbers current pe-3" style="font-size: 16px !important;">{{ products.number }}</span>
+    {% if products.has_next %}
+      <a href="?page={{ products.next_page_number }}">      
+        <svg class="chevron-right ps-3">
+          <use xlink:href="#chevron-right"></use>
+        </svg>
+      </a>
+    {% endif %}
+  </div>
+</nav>
+
+  <!-- Discount Section -->
+  <section class="py-5">
+    <div class="container-fluid">
+      <div class="bg-secondary py-5 my-5 rounded-5" style="background: url('{% static 'images/bg-leaves-img-pattern.png' %}') no-repeat;">
+        <div class="container my-5">
+          <div class="row">
+            <div class="col-md-6 p-5">
+              <div class="section-header">
+                <h2 class="section-title display-4">Get <span class="text-primary">25% Discount</span> on your first purchase</h2>
+              </div>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Dictumst amet, metus, sit massa posuere maecenas. At tellus ut nunc amet vel egestas.</p>
+            </div>
+            <div class="col-md-6 p-5">
+              <form>
+                <div class="mb-3">
+                  <label for="name" class="form-label">Name</label>
+                  <input type="text" class="form-control form-control-lg" name="name" id="name" placeholder="Name">
+                </div>
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email</label>
+                  <input type="email" class="form-control form-control-lg" name="email" id="email" placeholder="abc@mail.com">
+                </div>
+                <div class="form-check form-check-inline mb-3">
+                  <input class="form-check-input" type="checkbox" id="subscribe" value="subscribe">
+                  <label class="form-check-label" for="subscribe">Subscribe to the newsletter</label>
+                </div>
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-dark btn-lg">Submit</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock content %}

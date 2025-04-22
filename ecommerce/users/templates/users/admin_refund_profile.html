@@ -1,0 +1,392 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Refund Management</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{% static 'css/admin_refund.css' %}">
+</head>
+<body>
+<div class="container-fluid py-4">
+<div class="row g-4">
+<div class="col-lg-4">
+<div class="card shadow-sm">
+<div class="card-body text-center">
+<div class="position-relative d-inline-block mb-3">
+<img src="{{ user.get_profile_image_url }}" class="rounded-circle profile-image" alt="Admin Profile">
+<span class="position-absolute bottom-0 end-0 p-1 bg-success rounded-circle"><span class="visually-hidden">Online Status</span></span>
+</div>
+<h4 class="mb-1">Admin Dashboard</h4>
+<p class="text-muted mb-3">Refund Management System</p>
+<div class="d-flex justify-content-center gap-2 mb-3">
+<button class="btn btn-primary"><i class="bi bi-gear"></i> Settings</button>
+<button class="btn btn-outline-primary"><i class="bi bi-box-arrow-right"></i> Logout</button>
+</div>
+<div class="border-top pt-3">
+<div class="row text-start">
+<div class="col-12 mb-2">
+<small class="text-muted">Total Refunds Pending</small>
+<p class="mb-0">15</p>
+</div>
+<div class="col-12 mb-2">
+<small class="text-muted">Processed Today</small>
+<p class="mb-0">5</p>
+</div>
+<div class="col-12">
+<small class="text-muted">Total Amount Refunded</small>
+<p class="mb-0">$2,450.00</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="card shadow-sm mt-4">
+<div class="card-body">
+<h5 class="card-title">Quick Stats</h5>
+<div class="row g-3">
+<div class="col-6">
+<div class="p-3 bg-light rounded text-center">
+<h6 class="mb-1">Success Rate</h6>
+<p class="mb-0 text-success">95%</p>
+</div>
+</div>
+<div class="col-6">
+<div class="p-3 bg-light rounded text-center">
+<h6 class="mb-1">Avg. Processing</h6>
+<p class="mb-0">2.5 days</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-lg-8">
+<div class="card shadow-sm mb-4">
+<div class="card-body">
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h5 class="card-title mb-0">Refund Requests</h5>
+<div class="d-flex gap-2">
+<input type="text" class="form-control" placeholder="Search refunds...">
+<select class="form-select" style="width: auto;">
+<option>All Status</option>
+<option>Pending</option>
+<option>Approved</option>
+<option>Rejected</option>
+</select>
+</div>
+</div>
+<div class="table-responsive">
+<table class="table align-middle">
+<thead>
+<tr>
+<th>Refund ID</th>
+<th>Order ID</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Date</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>
+{% for refund in refunds %}
+                <tr>
+                    <td>#REF-{{ refund.id }}</td>
+                    <td>#ORD-{{ refund.order.id }}</td>
+                    <td>${{ refund.refund_amount }}</td>
+                    <td>
+                        <span class="badge
+                            {% if refund.status == 'pending' %}bg-warning
+                            {% elif refund.status == 'approved' %}bg-success
+                            {% else %}bg-danger{% endif %}">
+                            {{ refund.status|title }}
+                        </span>
+                    </td>
+                    <td>{{ refund.requested_at|date:"Y-m-d" }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#refundModal-{{ refund.id }}">View Details</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No refund requests found.</td>
+                </tr>
+                {% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="card shadow-sm">
+<div class="card-body">
+<h5 class="card-title mb-4">Refund Analytics</h5>
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card h-100">
+<div class="card-body">
+<h6 class="card-title">Top Refund Reasons</h6>
+<div class="progress mb-2" style="height: 20px;">
+<div class="progress-bar" role="progressbar" style="width: 65%">Product Defect (65%)</div>
+</div>
+<div class="progress mb-2" style="height: 20px;">
+<div class="progress-bar bg-info" role="progressbar" style="width: 25%">Wrong Size (25%)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="card h-100">
+<div class="card-body">
+<h6 class="card-title">Processing Time</h6>
+<div class="d-flex justify-content-between align-items-center">
+<div class="text-center">
+<h3 class="mb-0">2.5</h3>
+<small class="text-muted">Avg. Days</small>
+</div>
+<div class="text-center">
+<h3 class="mb-0">85%</h3>
+<small class="text-muted">On Time</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="card h-100">
+<div class="card-body">
+<h6 class="card-title">Monthly Trend</h6>
+<div class="progress mb-2" style="height: 5px;">
+<div class="progress-bar" role="progressbar" style="width: 75%"></div>
+</div>
+<small class="text-muted">25% increase from last month</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% for refund in refunds %}
+<div class="modal fade" id="refundModal-{{ refund.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Refund Details #REF-{{ refund.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6>Customer Information</h6>
+                        <p class="mb-1">Name: {{ refund.user.first_name }} {{ refund.user.last_name }}</p>
+                        <p class="mb-1">Email: {{ refund.user.email }}</p>
+                        <p class="mb-3">Phone: {{ refund.user.phone_number }}</p>
+                        <h6>Order Information</h6>
+                        <p class="mb-1">Order ID: #{{ refund.order.order_id }}</p>
+                        <p class="mb-1">Purchase Date: {{ refund.order.created_at|date:"Y-m-d"   }}</p>
+                        <p class="mb-1">Order Amount: ${{ refund.order.total_price }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Refund Information</h6>
+                        <p class="mb-1">Refund Amount: ${{ refund.refund_amount }}</p>
+                        <p class="mb-1">Request Date: {{ refund.requested_at|date:"Y-m-d" }}</p>
+                        <p class="mb-1">Status:
+                            <span class="badge
+                                {% if refund.status == 'pending' %}bg-warning
+                                {% elif refund.status == 'approved' %}bg-success
+                                {% else %}bg-danger{% endif %}">
+                                {{ refund.status|title }}
+                            </span>
+                        </p>
+                        <p class="mb-3">Reason: {{ refund.get_refund_reason_display }}</p>
+                        <h6>Additional Notes</h6>
+                        <p class="mb-1">{{ refund.additional_comments }}</p>
+                    </div>
+                    <div class="col-12 mt-4">
+                        <h6>Refunded Items</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Product Image</th>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in refund.order.items.all %}
+                                    <tr>
+                                        <td>
+  {% if item.product_variation and item.product_variation.product and item.product_variation.product.image %}
+    <img src="{{ item.product_variation.product.image.url }}"
+         class="product-thumbnail img-fluid rounded"
+         alt="{{ item.product_variation.product.name }}">
+  {% elif item.product and item.product.image %}
+    <img src="{{ item.product.image.url }}"
+         class="product-thumbnail img-fluid rounded"
+         alt="{{ item.product.name }}">
+  {% else %}
+    <img src="{% static 'images/default-product.jpg' %}"
+         class="product-thumbnail img-fluid rounded"
+         alt="No image available">
+  {% endif %}
+</td>
+<td>
+  {% if item.product_variation and item.product_variation.product %}
+    {{ item.product_variation.product.name }}
+  {% elif item.product and item.product.name %}
+    {{ item.product.name }}
+  {% else %}
+    Unknown Product
+  {% endif %}
+</td>
+
+                                        <td>{{ item.product_variation.product.name }}</td>
+                                        <td>{{ item.purchase_type }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>${{ item.price }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">No refunded items.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-12 mt-4">
+    <h6>Return Evidence</h6>
+    <div class="row g-3">
+        {% for media in refund.media.all %}
+            {% with file_url=media.media_file.url|lower %}
+                {% if ".jpg" in file_url or ".jpeg" in file_url or ".png" in file_url or ".gif" in file_url %}
+                    <div class="col-md-6">
+                        <div class="card">
+                            <img src="{{ media.media_file.url }}" class="card-img-top return-evidence img-fluid" alt="Product Defect Photo">
+                            <div class="card-body">
+                                <h6 class="card-title">Defect Photo</h6>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#imageModal-{{ media.id }}">View Full Image</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal for Full Image -->
+                    <div class="modal fade" id="imageModal-{{ media.id }}" tabindex="-1" aria-labelledby="imageModalLabel-{{ media.id }}" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="imageModalLabel-{{ media.id }}">Full Image</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body text-center">
+                            <img src="{{ media.media_file.url }}" class="img-fluid" style="max-height:80vh; width:auto; margin:0 auto;" alt="Full Image">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                {% elif ".mp4" in file_url %}
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="video-wrapper">
+                                <video class="return-video w-100" controls playsinline webkit-playsinline>
+                                    <source src="{{ media.media_file.url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-title">Demonstration Video</h6>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#videoModal-{{ media.id }}">View Full Video</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal for Full Video -->
+                    <div class="modal fade" id="videoModal-{{ media.id }}" tabindex="-1" aria-labelledby="videoModalLabel-{{ media.id }}" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="videoModalLabel-{{ media.id }}">Full Video</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body text-center">
+                            <video class="w-100" controls playsinline webkit-playsinline style="max-height:80vh;">
+                                <source src="{{ media.media_file.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        {% empty %}
+            <p class="text-muted">No return evidence uploaded.</p>
+        {% endfor %}
+    </div>
+</div>
+
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'users:approve_refund' refund.id %}" class="btn btn-success">Approve Refund</a>
+                <a href="{% url 'users:reject_refund' refund.id %}" class="btn btn-danger">Reject Refund</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+{% if refund.photo %}
+<div class="modal fade" id="imageModal-{{ refund.id }}" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Return Evidence - Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <img src="{{ refund.photo.url }}" class="img-fluid w-100" alt="Product Defect Photo">
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Video Modal -->
+{% for media in refund.refundmedia_set.all %}
+    {% if media.media_file.url|slice:"-4:" == ".mp4" %}
+        <!-- Show Video -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="video-wrapper">
+                    <video class="return-video w-100" controls>
+                        <source src="{{ media.media_file.url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- Show Image -->
+        <div class="col-md-6">
+            <div class="card">
+                <img src="{{ media.media_file.url }}" class="card-img-top return-evidence" alt="Refund Media">
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}
+
+{% endfor %}
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+    <section class="py-5 mb-5" style="background: url('{% static 'images/background-pattern.jpg' %}');">
+      <div class="container-fluid">
+        <div class="d-flex justify-content-between">
+          <h1 class="page-title pb-2">Thank You</h1>
+          <nav class="breadcrumb fs-6">
+            <a class="breadcrumb-item nav-link" href="#">Home</a>
+            <a class="breadcrumb-item nav-link" href="#">Pages</a>
+            <span class="breadcrumb-item active" aria-current="page">Thank you</span>
+          </nav>
+        </div>
+      </div>
+    </section>
+
+    <section id="thank-you" class="py-5 bg-light-grey">
+      <div class="container-fluid">
+        <div class="row justify-content-center">
+          <div class="row g-5">
+            <div class="col-md-8">
+              <div class="table-responsive cart">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col" class="card-title text-uppercase text-muted">Product</th>
+                      <th scope="col" class="card-title text-uppercase text-muted">Quantity</th>
+                      <th scope="col" class="card-title text-uppercase text-muted">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                        {% for item in order_items %}
+                        <tr>
+                          <td scope="row" class="py-4">
+                            <div class="cart-info d-flex flex-wrap align-items-center">
+                              <div class="col-lg-3">
+                                <div class="card-image">
+                                  {% if item.product_variation and item.product_variation.product.image %}
+                                    <img src="{{ item.product_variation.product.image.url }}" 
+                                         alt="{{ item.product_variation.product.name }}" 
+                                         class="img-fluid">
+                                  {% elif item.product and item.product.image %}
+                                    <img src="{{ item.product.image.url }}" 
+                                         alt="{{ item.product.name }}" 
+                                         class="img-fluid">
+                                  {% else %}
+                                    <img src="{% static 'images/default-product.jpg' %}" 
+                                         alt="No image available" 
+                                         class="img-fluid">
+                                  {% endif %}
+                                </div>
+                              </div>
+                              <div class="col-lg-9">
+                                <div class="card-detail ps-3">
+                                  <h5 class="card-title">
+                                {% if item.product_variation %}
+                                  <a href="{% url 'store:single-product' item.product_variation.product.slug %}" class="text-decoration-none">
+                                    {{ item.product_variation.product.name }}
+                                  </a>
+                                {% elif item.product %}
+                                  <a href="{% url 'store:single-product' item.product.slug %}" class="text-decoration-none">
+                                    {{ item.product.name }}
+                                  </a>
+                                {% endif %}
+                              </h5>
+                                  <p class="text-muted">
+                                    {% if item.product_variation %}
+                                      <strong>Size:</strong> {{ item.product_variation.size.name|default:"N/A" }} |
+                                      <strong>Color:</strong> {{ item.product_variation.color|default:"N/A" }} |
+                                    {% endif %}
+                                    <strong>Type:</strong> {{ item.get_purchase_type_display|default:"N/A" }}
+                              </p>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td class="py-4">
+                            {{ item.quantity }}
+                          </td>
+                          <td class="py-4">
+                            <div class="total-price">
+                              <span class="money text-dark">${{ item.total_price|floatformat:2 }}</span>
+                            </div>
+                          </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                          <td colspan="3" class="text-center py-4">No items found in your order.</td>
+                        </tr>
+                        {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="cart-totals bg-grey py-5">
+                <h4 class="text-dark pb-4">Order Summary</h4>
+                <div class="order-info mb-4">
+                  <p><strong>Order Number:</strong> {{ order.order_id }}</p>
+                  <p><strong>Customer:</strong> {{ order.first_name }} {{ order.last_name }}</p>
+                  <p><strong>Email:</strong> {{ order.email }}</p>
+                </div>
+                <div class="total-price pb-5">
+                  <table cellspacing="0" class="table text-uppercase">
+                    <tbody>
+                      <tr class="subtotal pt-2 pb-2 border-top border-bottom">
+                        <th>Subtotal</th>
+                        <td data-title="Subtotal">
+                          <span class="price-amount amount text-dark ps-5">
+                            <bdi><span class="price-currency-symbol">$</span>{{ order.subtotal|floatformat:2 }}</bdi>
+                          </span>
+                        </td>
+                      </tr>
+                      <tr class="tax pt-2 pb-2 border-bottom">
+                        <th>Tax (13%)</th>
+                        <td data-title="Tax">
+                          <span class="price-amount amount text-dark ps-5">
+                            <bdi><span class="price-currency-symbol">$</span>{{ order.tax_amount|floatformat:2 }}</bdi>
+                          </span>
+                        </td>
+                      </tr>
+                                            <tr class="tax pt-2 pb-2 border-bottom">
+                        <th>Shipping Cost</th>
+                        <td data-title="Shipping Cost">
+                            <span class="price-amount amount text-dark ps-5">
+                            <bdi><span class="price-currency-symbol">$</span>{{ order.shipping_cost|floatformat:2 }}</bdi>
+                          </span>
+                        </td>
+                      </tr>
+                      <tr class="order-total pt-2 pb-2 border-bottom">
+                        <th>Total</th>
+                        <td data-title="Total">
+                          <span class="price-amount amount text-dark ps-5">
+                            <bdi><span class="price-currency-symbol">$</span>{{ order.total_price|floatformat:2 }}</bdi>
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="button-wrap row g-2">
+                  <div class="col-md-12">
+                    <a href="{% url 'store:shop' %}" class="btn btn-primary py-3 px-4 text-uppercase btn-rounded-none w-100">
+                      Continue Shopping
+                    </a>
+                  </div>
+                  <div class="col-md-12">
+                    <a href="{% url 'orders:request_refund' order.id %}" class="btn py-3 px-4 text-uppercase btn-rounded-none w-100" style="background-color: #8B0000; color: white;">
+                      Request Refund
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+{% endblock %}

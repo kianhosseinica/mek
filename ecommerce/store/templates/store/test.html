@@ -1,0 +1,63 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Page Title / Breadcrumb Section -->
+<section class="py-5 mb-5" style="background: url('{% static "images/background-pattern.jpg" %}');">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between">
+      <h1 class="page-title pb-2">Verification</h1>
+      <nav class="breadcrumb fs-6">
+        <a class="breadcrumb-item nav-link" href="#">Home</a>
+        <a class="breadcrumb-item nav-link" href="#">Pages</a>
+        <span class="breadcrumb-item active" aria-current="page">Checkout</span>
+      </nav>
+    </div>
+  </div>
+</section>
+
+<!-- PIN Verification Form Section -->
+<section id="pin-form" class="py-5">
+  <div class="container-sm">
+    <div class="row justify-content-center">
+      <div class="col-lg-4 p-5 border shadow-sm rounded-3 bg-light">
+        <h5 class="text-uppercase mb-4 text-center">Enter Your 4-Digit PIN</h5>
+        <p class="text-center text-muted mb-4">A one-time PIN has been sent to your phone number for verification.</p>
+        <form id="pinForm" method="POST">
+          {% csrf_token %}
+          <div class="mb-3 d-flex justify-content-center gap-2">
+            <input type="text" id="pin1" name="pin1" class="form-control form-control-lg text-center" maxlength="1" style="width: 50px;" required>
+            <input type="text" id="pin2" name="pin2" class="form-control form-control-lg text-center" maxlength="1" style="width: 50px;" required>
+            <input type="text" id="pin3" name="pin3" class="form-control form-control-lg text-center" maxlength="1" style="width: 50px;" required>
+            <input type="text" id="pin4" name="pin4" class="form-control form-control-lg text-center" maxlength="1" style="width: 50px;" required>
+          </div>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">Verify PIN</Wantedly</button>
+          </div>
+          <div class="mt-3 text-center">
+            <a href="" class="text-decoration-none">Resend PIN</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Auto-move to next input field when a digit is entered
+  const pinInputs = document.querySelectorAll('#pin-form input[type="text"]');
+  pinInputs.forEach((input, index) => {
+    input.addEventListener('input', function(e) {
+      if (this.value.length === 1 && index < pinInputs.length - 1) {
+        pinInputs[index + 1].focus();
+      }
+    });
+    // Handle backspace to move to previous input
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value.length === 0 && index > 0) {
+        pinInputs[index - 1].focus();
+      }
+    });
+  });
+</script>
+{% endblock %}

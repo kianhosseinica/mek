@@ -1,0 +1,64 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Page Title / Breadcrumb Section -->
+<section class="py-5 mb-5" style="background: url('{% static "images/background-pattern.jpg" %}');">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between">
+      <h1 class="page-title pb-2">Login</h1>
+      <nav class="breadcrumb fs-6">
+        <a class="breadcrumb-item nav-link" href="#">Home</a>
+        <a class="breadcrumb-item nav-link" href="#">Pages</a>
+        <span class="breadcrumb-item active" aria-current="page">Login</span>
+      </nav>
+    </div>
+  </div>
+</section>
+
+<!-- Login Form Section -->
+<section id="login-form" class="py-5">
+  <div class="container-sm">
+    <div class="row justify-content-center">
+      <div class="col-lg-4 p-5 border shadow-sm rounded-3 bg-light">
+        <h5 class="text-uppercase mb-4 text-center">Login to Your Account</h5>
+        <form id="loginForm" method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <input type="text" id="username_or_phone" name="username_or_phone" class="form-control form-control-lg" placeholder="Phone Number" required>
+          </div>
+          <div class="mb-3">
+            <input type="password" name="password" class="form-control form-control-lg" placeholder="Password" required>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="rememberMe">
+            <label class="form-check-label" for="rememberMe">Remember me</label>
+          </div>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">Log in</button>
+          </div>
+            <div class="mt-3 text-center">
+                <a href="" class="text-decoration-none">Forgot your password?</a>
+            </div>
+            <div class="mt-2 text-center">
+                <span>Don’t have an account?</span>
+                <a href="{% url 'users:signup' %}" class="text-decoration-none">Register</a>
+            </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</section>  <script>
+    // Auto-format phone number input to Canadian format (123) 456-7890
+    document.getElementById('username_or_phone').addEventListener('input', function(e) {
+      let input = e.target.value.replace(/\D/g, '');
+      let formatted = '';
+      if (input.length > 0) formatted = '(' + input.substring(0,3);
+      if (input.length >= 4) formatted += ') ' + input.substring(3,6);
+      if (input.length >= 7) formatted += '-' + input.substring(6,10);
+      e.target.value = formatted;
+    });
+  </script>
+{% endblock %}
+

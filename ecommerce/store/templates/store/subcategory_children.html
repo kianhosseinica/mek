@@ -1,0 +1,12 @@
+{% with children=parent.subcategories.all %}
+    {% if children %}
+        <ul>
+            {% for child in children %}
+                <li>
+                    {{ child.name }}
+                    {% include 'store/subcategory_children.html' with parent=child %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}

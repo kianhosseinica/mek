@@ -1,0 +1,500 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Refund Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/admin_refund.css' %}">
+</head>
+<body>
+<div class="container-fluid py-4">
+  <div class="row g-4">
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <div class="position-relative d-inline-block mb-3">
+            <img src="{{ user.get_profile_image_url }}" class="rounded-circle profile-image" alt="Admin Profile">
+            <span class="position-absolute bottom-0 end-0 p-1 bg-success rounded-circle">
+              <span class="visually-hidden">Online Status</span>
+            </span>
+          </div>
+          <h4 class="mb-1">Admin Dashboard</h4>
+          <p class="text-muted mb-3">Order Management System</p>
+          <div class="d-flex justify-content-center gap-2 mb-3">
+            <button class="btn btn-primary"><i class="bi bi-gear"></i> Settings</button>
+            <button class="btn btn-outline-primary"><i class="bi bi-box-arrow-right"></i> Logout</button>
+          </div>
+          <div class="border-top pt-3">
+            <div class="row text-start">
+              <div class="col-12 mb-2">
+                <small class="text-muted">Total Orders Pending</small>
+                <p class="mb-0">15</p>
+              </div>
+              <div class="col-12 mb-2">
+                <small class="text-muted">Processed Today</small>
+                <p class="mb-0">5</p>
+              </div>
+              <div class="col-12">
+                <small class="text-muted">Total Amount</small>
+                <p class="mb-0">$2,450.00</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card shadow-sm mt-4">
+        <div class="card-body">
+          <h5 class="card-title">Quick Stats</h5>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="p-3 bg-light rounded text-center">
+                <h6 class="mb-1">Success Rate</h6>
+                <p class="mb-0 text-success">95%</p>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 bg-light rounded text-center">
+                <h6 class="mb-1">Avg. Processing</h6>
+                <p class="mb-0">2.5 days</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Orders Table -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="card-title mb-0">Order Requests</h5>
+            <div class="d-flex gap-2">
+              <input type="text" class="form-control" placeholder="Search orders...">
+              <select class="form-select" style="width: auto;">
+                <option>All Status</option>
+                <option>Pending</option>
+                <option>Approved</option>
+                <option>Rejected</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>User</th>
+                  <th>Total Price</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for order in orders %}
+                <tr>
+                  <td>#ORD-{{ order.id }}</td>
+                  <td>{{ order.user.get_full_name }}</td>
+                  <td>${{ order.total_price }}</td>
+                  <td>
+                    <span class="badge
+                      {% if order.status == 'pending' %}bg-warning
+                      {% elif order.status == 'approved' %}bg-success
+                      {% else %}bg-danger{% endif %}">
+                      {{ order.status|title }}
+                    </span>
+                  </td>
+                  <td>{{ order.created_at|date:"Y-m-d" }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#orderModal-{{ order.id }}">View Details</button>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center">No orders found.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title mb-4">Order Analytics</h5>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">Top Order Reasons</h6>
+                  <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar" role="progressbar" style="width: 65%">Product Interest (65%)</div>
+                  </div>
+                  <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 25%">Repeat Orders (25%)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">Processing Time</h6>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-center">
+                      <h3 class="mb-0">2.5</h3>
+                      <small class="text-muted">Avg. Days</small>
+                    </div>
+                    <div class="text-center">
+                      <h3 class="mb-0">85%</h3>
+                      <small class="text-muted">On Time</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">Monthly Trend</h6>
+                  <div class="progress mb-2" style="height: 5px;">
+                    <div class="progress-bar" role="progressbar" style="width: 75%"></div>
+                  </div>
+                  <small class="text-muted">25% increase from last month</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Detail Modal for each order -->
+  {% for order in orders %}
+  <div class="modal fade" id="orderModal-{{ order.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Order Details #ORD-{{ order.id }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="change-status-form-{{ order.id }}" method="POST" action="{% url 'users:change_status_ajax' order.id %}">
+          {% csrf_token %}
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <h6>Customer Information</h6>
+                <p class="mb-1">Name: {{ order.user.first_name }} {{ order.user.last_name }}</p>
+                <p class="mb-1">Email: {{ order.user.email }}</p>
+                <p class="mb-3">Phone: {{ order.user.phone_number }}</p>
+                <h6>Order Information</h6>
+                <p class="mb-1">Order ID: #{{ order.order_id }}</p>
+                <p class="mb-1">Purchase Date: {{ order.created_at|date:"Y-m-d" }}</p>
+                <p class="mb-1">Order Amount: ${{ order.total_price }}</p>
+              </div>
+              <div class="col-md-6">
+                <h6>Order Information</h6>
+                <p class="mb-1">Order Total: ${{ order.total_price }}</p>
+                <p class="mb-1">Purchase Date: {{ order.created_at|date:"Y-m-d" }}</p>
+                <p class="mb-1">Status:
+                  <span class="badge
+                    {% if order.status == 'pending' %}bg-warning
+                    {% elif order.status == 'approved' %}bg-success
+                    {% else %}bg-danger{% endif %}">
+                    {{ order.status|title }}
+                  </span>
+                </p>
+                <p class="mb-3">Additional Notes: {{ order.additional_notes }}</p>
+                  <p><strong>Delivery Method:</strong> {{ order.get_fulfillment_method_display }}</p>
+
+                      <div class="d-flex justify-content-center">
+                        <div class="card rounded-lg shadow-sm" style="max-width: 400px; width: 100%;">
+                          <div class="card-header bg-light text-center border-0">
+                            <h5 class="mb-0">Billing Address</h5>
+                          </div>
+                          <div class="card-body text-center">
+                            <p class="h6 mb-1">{{ order.first_name }} {{ order.last_name }}</p>
+                            {% if order.company_name %}
+                              <p class="mb-1">{{ order.company_name }}</p>
+                            {% endif %}
+                            <p class="mb-1">
+                              {{ order.address1 }}{% if order.address2 %}, {{ order.address2 }}{% endif %}
+                            </p>
+                            <p class="mb-1">{{ order.city }}, {{ order.state }} {{ order.zip_code }}</p>
+                            <p class="mb-1">
+                              <i class="bi bi-telephone-fill"></i>
+                              {{ order.phone }}
+                            </p>
+                            <p class="mb-0 text-muted">
+                              <i class="bi bi-envelope-fill"></i>
+                              {{ order.email }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+
+              </div>
+              <div class="col-12 mt-4">
+                <h6>Ordered Items</h6>
+                <div class="table-responsive">
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Product Image</th>
+                        <th>Name</th>
+                        <th>Variation</th>
+                        <th>Purchase Type</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for item in order.items.all %}
+                      <tr>
+                        <td>
+                          {% if item.product_variation and item.product_variation.product and item.product_variation.product.image %}
+                          <img src="{{ item.product_variation.product.image.url }}"
+                               class="product-thumbnail img-fluid rounded"
+                               alt="{{ item.product_variation.product.name }}">
+                          {% elif item.product and item.product.image %}
+                          <img src="{{ item.product.image.url }}"
+                               class="product-thumbnail img-fluid rounded"
+                               alt="{{ item.product.name }}">
+                          {% else %}
+                          <img src="{% static 'images/default-product.jpg' %}"
+                               class="product-thumbnail img-fluid rounded"
+                               alt="No image available">
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if item.product_variation and item.product_variation.product %}
+                            {{ item.product_variation.product.name }}
+                          {% elif item.product and item.product.name %}
+                            {{ item.product.name }}
+                          {% else %}
+                            Unknown Product
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if item.product_variation %}
+                            {% if item.product_variation.size %}
+                              {{ item.product_variation.size.name }}
+                            {% endif %}
+                            {% if item.product_variation.size and item.product_variation.color %}
+                              -
+                            {% endif %}
+                            {% if item.product_variation.color %}
+                              {{ item.product_variation.color }}
+                            {% endif %}
+                          {% else %}
+                            N/A
+                          {% endif %}
+                        </td>
+                        <td>{{ item.purchase_type|title }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>${{ item.price }}</td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                        <td colspan="6" class="text-center">No ordered items.</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="col-12 mt-4">
+                <h6>Order Evidence</h6>
+                <div class="row g-3">
+                  {% for media in order.media.all %}
+                    {% with file_url=media.media_file.url|lower %}
+                      {% if ".jpg" in file_url or ".jpeg" in file_url or ".png" in file_url or ".gif" in file_url %}
+                      <div class="col-md-6">
+                        <div class="card">
+                          <img src="{{ media.media_file.url }}" class="card-img-top return-evidence img-fluid" alt="Product Image">
+                          <div class="card-body">
+                            <h6 class="card-title">Product Image</h6>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#imageModal-{{ media.id }}">View Full Image</button>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- Modal for Full Image -->
+                      <div class="modal fade" id="imageModal-{{ media.id }}" tabindex="-1" aria-labelledby="imageModalLabel-{{ media.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title" id="imageModalLabel-{{ media.id }}">Full Image</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                              <img src="{{ media.media_file.url }}" class="img-fluid" style="max-height:80vh; width:auto; margin:0 auto;" alt="Full Image">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {% elif ".mp4" in file_url %}
+                      <div class="col-md-6">
+                        <div class="card">
+                          <div class="video-wrapper">
+                            <video class="return-video w-100" controls playsinline webkit-playsinline>
+                              <source src="{{ media.media_file.url }}" type="video/mp4">
+                              Your browser does not support the video tag.
+                            </video>
+                          </div>
+                          <div class="card-body">
+                            <h6 class="card-title">Product Video</h6>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#videoModal-{{ media.id }}">View Full Video</button>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- Modal for Full Video -->
+                      <div class="modal fade" id="videoModal-{{ media.id }}" tabindex="-1" aria-labelledby="videoModalLabel-{{ media.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title" id="videoModalLabel-{{ media.id }}">Full Video</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                              <video class="w-100" controls playsinline webkit-playsinline style="max-height:80vh;">
+                                <source src="{{ media.media_file.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                              </video>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {% endif %}
+                    {% endwith %}
+                  {% empty %}
+                    <p class="text-muted">No order evidence uploaded.</p>
+                  {% endfor %}
+                </div>
+              </div>
+              <!-- Change Order Status Section -->
+              <div class="col-12 mt-4">
+                <h6>Change Order Status</h6>
+                <p>Current Status:
+                  <span id="current-status-{{ order.id }}" class="badge
+                    {% if order.status == 'Pending' %}bg-warning
+                    {% elif order.status == 'Paid' %}bg-success
+                    {% elif order.status == 'Shipped' %}bg-info
+                    {% elif order.status == 'Delivered' %}bg-primary
+                    {% elif order.status == 'Complete' %}bg-success
+                    {% elif order.status == 'Cancelled' %}bg-danger{% endif %}">
+                    {{ order.status|title }}
+                  </span>
+                </p>
+                <select name="order_status" class="form-select">
+                  <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
+                  <option value="Paid" {% if order.status == 'Paid' %}selected{% endif %}>Paid</option>
+                  <option value="Shipped" {% if order.status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                  <option value="Delivered" {% if order.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                  <option value="Complete" {% if order.status == 'Complete' %}selected{% endif %}>Complete</option>
+                  <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- Image Modal for Order Evidence -->
+  {% if order.photo %}
+  <div class="modal fade" id="imageModal-{{ order.id }}" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Order Evidence - Photo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0">
+          <img src="{{ order.photo.url }}" class="img-fluid w-100" alt="Product Image">
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <!-- Video Modal for Order Evidence -->
+  {% for media in order.ordermedia_set.all %}
+    {% if media.media_file.url|slice:"-4:" == ".mp4" %}
+      <div class="col-md-6">
+        <div class="card">
+          <div class="video-wrapper">
+            <video class="return-video w-100" controls>
+              <source src="{{ media.media_file.url }}" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="col-md-6">
+        <div class="card">
+          <img src="{{ media.media_file.url }}" class="card-img-top return-evidence" alt="Order Media">
+        </div>
+      </div>
+    {% endif %}
+  {% endfor %}
+  {% endfor %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('form[id^="change-status-form-"]').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const orderId = this.id.split('-').pop();
+      const formData = new FormData(this);
+      fetch(this.action, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const statusBadge = document.getElementById('current-status-' + orderId);
+          statusBadge.innerText = data.new_status;
+          statusBadge.className = "badge";
+          if (data.new_status === 'Pending') {
+            statusBadge.classList.add('bg-warning');
+          } else if (data.new_status === 'Paid') {
+            statusBadge.classList.add('bg-success');
+          } else if (data.new_status === 'Shipped') {
+            statusBadge.classList.add('bg-info');
+          } else if (data.new_status === 'Delivered') {
+            statusBadge.classList.add('bg-primary');
+          } else if (data.new_status === 'Complete') {
+            statusBadge.classList.add('bg-success');
+          } else if (data.new_status === 'Cancelled') {
+            statusBadge.classList.add('bg-danger');
+          }
+          alert("Order status updated successfully!");
+        } else {
+          alert("Error: " + data.error);
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("An error occurred while updating the status.");
+      });
+    });
+  });
+});
+</script>
+</body>
+</html>

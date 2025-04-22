@@ -1,0 +1,5 @@
+Hello {{ user.first_name }},
+
+Your 4-digit verification code is: {{ code }}
+
+Thank you for signing up!

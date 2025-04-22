@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayPal Payment</title>
+</head>
+<body>
+    <h2>Pay with PayPal (CAD)</h2>
+    <div id="paypal-button-container"></div>
+    <p id="result-message"></p>
+
+    <!-- ✅ Load PayPal SDK with CAD currency -->
+    <script src="https://www.paypal.com/sdk/js?client-id={{ PAYPAL_CLIENT_ID }}&currency=CAD"></script>
+
+    <script>
+        function resultMessage(message) {
+            document.getElementById("result-message").innerHTML = message;
+        }
+
+        const orderId = "{{ order.id }}";  // ✅ Get Order ID from Django
+        const totalPrice = "{{ order.total_price }}";  // ✅ Get the correct CAD amount
+
+        console.log("📌 Order ID:", orderId);
+        console.log("📌 Total Price Sent to PayPal (CAD):", totalPrice);
+
+        window.paypal.Buttons({
+            style: {
+                shape: "rect",
+                layout: "vertical",
+                color: "gold",
+                label: "paypal",
+            },
+
+            createOrder: async function(data, actions) {
+                try {
+                    const response = await fetch("/api/paypal/orders/create/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"  // ✅ CSRF protection
+                        },
+                        body: JSON.stringify({
+                            order_id: orderId,
+                            amount: parseFloat(totalPrice).toFixed(2)  // ✅ Convert to float and fix decimals
+                        }),
+                    });
+
+                    const orderData = await response.json();
+
+                    if (!orderData.id) {
+                        throw new Error("❌ Failed to create PayPal order.");
+                    }
+
+                    console.log("✅ PayPal Order Created (CAD):", orderData.id);
+                    return orderData.id;
+                } catch (error) {
+                    console.error(error);
+                    resultMessage("❌ Error creating PayPal order. Please try again.");
+                }
+            },
+
+            onApprove: async function(data, actions) {
+                try {
+                    const response = await fetch(`/api/paypal/orders/${data.orderID}/capture/`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"  // ✅ CSRF protection
+                        },
+                    });
+
+                    const orderData = await response.json();
+
+                    if (orderData.transaction_id) {
+                        resultMessage(`✅ Transaction Successful: ${orderData.transaction_id}`);
+                        window.location.href = `/order-success/${orderData.order_id}/`;
+                    } else {
+                        throw new Error("❌ Payment failed.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    resultMessage("❌ Payment failed. Please try again.");
+                }
+            },
+
+            onCancel: function (data) {
+                resultMessage("❌ Payment cancelled. Try again.");
+            },
+
+            onError: function (err) {
+                console.error(err);
+                resultMessage("❌ An error occurred. Please try again.");
+            }
+
+        }).render("#paypal-button-container");
+    </script>
+</body>
+</html>

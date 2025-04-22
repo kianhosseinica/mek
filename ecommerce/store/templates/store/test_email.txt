@@ -1,0 +1,8 @@
+Hello {{ user.get_full_name|default:"User" }},
+
+This is a test email sent from your Django application using Gmail's SMTP server.
+
+Thank you for testing our email functionality.
+
+Best regards,
+Your Company Name

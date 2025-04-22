@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Success</title>
+</head>
+<body>
+    <h2>🎉 Order Confirmed!</h2>
+    <p>Thank you for your order, <strong>{{ order.customer_name }}</strong>!</p>
+    <p>Your Order ID: <strong>{{ order.id }}</strong></p>
+    <p>Total: <strong>${{ order.total_price }}</strong></p>
+    <a href="/">Return to Home</a>
+</body>
+</html>

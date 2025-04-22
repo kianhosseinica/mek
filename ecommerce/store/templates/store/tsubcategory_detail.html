@@ -1,0 +1,81 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+  <!-- Page Banner -->
+  <section class="py-5 mb-5" style="background: url('{% static 'images/background-pattern.jpg' %}');">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between">
+        <h1 class="page-title pb-2">{{ subcategory.name }}</h1>
+        <nav class="breadcrumb fs-6">
+          <a class="breadcrumb-item nav-link" href="#">Home</a>
+          <a class="breadcrumb-item nav-link" href="{% url 'store:category-index' %}">Categories</a>
+          <span class="breadcrumb-item active" aria-current="page">{{ subcategory.name }}</span>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- Subcategories Grid Section -->
+  <section class="subcategory-section py-5">
+    <div class="container">
+      <h2 class="mb-4">Subcategories</h2>
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3">
+        {% for sub in subcategories %}
+          <div class="col">
+            <div class="subcategory-item text-center">
+              <a href="{% url 'store:subcategory_detail' sub.slug %}">
+                {% if sub.image %}
+                  <img src="{{ sub.image.url }}" alt="{{ sub.name }}" class="img-fluid" style="max-width:150px;">
+                {% endif %}
+                <h4>{{ sub.name }}</h4>
+              </a>
+            </div>
+          </div>
+        {% empty %}
+          <p>No further subcategories available.</p>
+        {% endfor %}
+      </div>
+      <p class="mt-4">
+        <a href="{% url 'store:category-index' %}" class="btn btn-secondary">Back to all categories</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Discount Section (Optional) -->
+  <section class="py-5">
+    <div class="container-fluid">
+      <div class="bg-secondary py-5 my-5 rounded-5" style="background: url('{% static 'images/bg-leaves-img-pattern.png' %}') no-repeat;">
+        <div class="container my-5">
+          <div class="row">
+            <div class="col-md-6 p-5">
+              <div class="section-header">
+                <h2 class="section-title display-4">Get <span class="text-primary">25% Discount</span> on your first purchase</h2>
+              </div>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Dictumst amet, metus, sit massa posuere maecenas. At tellus ut nunc amet vel egestas.</p>
+            </div>
+            <div class="col-md-6 p-5">
+              <form>
+                <div class="mb-3">
+                  <label for="name" class="form-label">Name</label>
+                  <input type="text" class="form-control form-control-lg" name="name" id="name" placeholder="Name">
+                </div>
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email</label>
+                  <input type="email" class="form-control form-control-lg" name="email" id="email" placeholder="abc@mail.com">
+                </div>
+                <div class="form-check form-check-inline mb-3">
+                  <input class="form-check-input" type="checkbox" id="subscribe" value="subscribe">
+                  <label class="form-check-label" for="subscribe">Subscribe to the newsletter</label>
+                </div>
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-dark btn-lg">Submit</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock content %}

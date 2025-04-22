@@ -1,0 +1,260 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/refund.css' %}">
+  {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">MyStore</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">Profile</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">Order History</a></li>
+        <li class="nav-item"><a class="nav-link active" href="#">Refunds</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">Wishlist</a></li>
+        <li class="nav-item"><a class="nav-link text-danger" href="#">Logout</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <!-- Important Notes -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="alert alert-warning border-warning">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Important Notes</h5>
+        <ul class="mb-0">
+          <li>Customized or personalized items are not eligible for refund</li>
+          <li>Items marked as "Final Sale" cannot be refunded</li>
+          <li>Used or damaged items may not qualify for full refund</li>
+          <li>Some seasonal items have specific return windows</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Refund Request Information -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="mb-3">Request Refund</h3>
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> You can request a refund within 30 days of purchase.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Details Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Order #{{ order.id }}</h5>
+
+          <!-- Show Form Errors -->
+          {% if refund_form.errors or media_form.errors %}
+          <div class="alert alert-danger">
+            <strong>There were some errors with your submission:</strong>
+            <ul>
+              {% for error in refund_form.non_field_errors %}
+              <li>{{ error }}</li>
+              {% endfor %}
+              {% for error in media_form.non_field_errors %}
+              <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!-- Hidden Field for Order ID -->
+            <input type="hidden" name="order" value="{{ order.id }}">
+            {% load refund_extras %}
+            {% for item in order_items %}
+            <!-- Calculate Remaining Refundable Quantity -->
+            {% with already_refunded=item.refunds.all|sum_refunded %}
+            {% with remaining_quantity=item.quantity|subtract:already_refunded %}
+
+            <div class="row align-items-center border-bottom py-3">
+              <div class="col-md-2">
+                {% if item.product_variation and item.product_variation.product.image %}
+                                <img src="{{ item.product_variation.product.image.url }}"
+                                     alt="{{ item.product_variation.product.name }}"
+                                     class="img-fluid">
+                              {% elif item.product and item.product.image %}
+                                <img src="{{ item.product.image.url }}"
+                                     alt="{{ item.product.name }}"
+                                     class="img-fluid">
+                              {% else %}
+                                <img src="{% static 'images/default-product.jpg' %}"
+                                     alt="No image available"
+                                     class="img-fluid">
+                              {% endif %}
+              </div>
+              <div class="col-md-5">
+                {% if item.product_variation %}
+                                  <a href="{% url 'store:single-product' item.product_variation.product.slug %}" class="text-decoration-none">
+                                    {{ item.product_variation.product.name }}
+                                  </a>
+                                {% elif item.product %}
+                                  <a href="{% url 'store:single-product' item.product.slug %}" class="text-decoration-none">
+                                    {{ item.product.name }}
+                                  </a>
+                                {% endif %}
+                <p class="text-muted mb-0">Ordered: {{ item.quantity }}</p>
+                <p class="text-muted">Refunded: {{ already_refunded|default:0 }}</p>
+                <p class="text-muted">Remaining: {{ remaining_quantity }}</p>
+                <p class="text-muted">Price: ${{ item.total_price }}</p>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="refund_item_{{ item.id }}" value="{{ item.id }}"
+                         {% if remaining_quantity > 0 and order.status != "Cancelled" %}checked{% else %}disabled{% endif %}>
+                  <label class="form-check-label {% if remaining_quantity > 0 and order.status != "Cancelled" %}text-success{% else %}text-danger{% endif %}">
+                    {% if remaining_quantity > 0 and order.status != "Cancelled" %}
+                      Eligible for Refund
+                    {% else %}
+                      Not Eligible for Refund
+                    {% endif %}
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-5">
+                {% if remaining_quantity > 0 and order.status != "Cancelled" %}
+                <div class="form-group">
+                  <label>Quantity to Refund</label>
+                  <input type="number" class="form-control"
+                         name="refund_quantity_{{ item.id }}"
+                         min="{% if item.purchase_type == 'bag' %}{{ item.product_variation.bag_size }}{% elif item.purchase_type == 'box' %}{{ item.product_variation.box_size }}{% else %}1{% endif %}"
+                         max="{{ remaining_quantity }}"
+                         step="{% if item.purchase_type == 'bag' %}{{ item.product_variation.bag_size }}{% elif item.purchase_type == 'box' %}{{ item.product_variation.box_size }}{% else %}1{% endif %}"
+                         value="{% if item.purchase_type == 'bag' %}{{ item.product_variation.bag_size }}{% elif item.purchase_type == 'box' %}{{ item.product_variation.box_size }}{% else %}1{% endif %}">
+                </div>
+                <small class="text-success"><i class="bi bi-check-circle"></i> Within 30-day return window</small>
+                {% else %}
+                <div class="alert alert-danger mb-0">
+                  <i class="bi bi-x-circle"></i> Item or order is non-refundable
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endwith %}
+            {% endwith %}
+            {% empty %}
+            <p class="text-muted">No items found for this order.</p>
+            {% endfor %}
+
+            <!-- Refund Form -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <h5 class="card-title mb-4">Refund Details</h5>
+
+                    <div class="mb-3">
+                      <label class="form-label">Reason for Refund</label>
+                      <select class="form-select" name="refund_reason">
+                        <option value="damaged">Product damaged</option>
+                        <option value="wrong_item">Wrong item received</option>
+                        <option value="not_as_described">Product not as described</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Additional Comments</label>
+                      <textarea class="form-control" rows="3" name="additional_comments"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Upload Images (Optional)</label>
+                      <input type="file" class="form-control" name="media_files" multiple>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary">Submit Refund Request</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div> <!-- End Refund Form -->
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Refund History -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title mb-4">Refund History</h5>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Product</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Requested Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for refund in refund_history %}
+                <tr>
+                  <td>#{{ refund.order.id }}</td>
+                  <td>
+                      {% if refund.order_item.product_variation and refund.order_item.product_variation.product %}
+                        {{ refund.order_item.product_variation.product.name }}
+                      {% elif refund.order_item.product and refund.order_item.product.name %}
+                        {{ refund.order_item.product.name }}
+                      {% else %}
+                        Unknown Product
+                      {% endif %}
+                    </td>
+
+                  <td>${{ refund.refund_amount }}</td>
+                  <td>
+                    <span class="badge {% if refund.status == 'approved' %}bg-success{% elif refund.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                      {{ refund.get_status_display }}
+                    </span>
+                  </td>
+                  <td>{{ refund.requested_at|date:"Y-m-d" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted">No refund requests found.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  {{ block.super }}
+{% endblock %}

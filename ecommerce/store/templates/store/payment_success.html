@@ -1,0 +1,14 @@
+<div class="container text-center mt-5">
+    <h1 class="text-success">✅ Payment Successful!</h1>
+    <p>Thank you for your order. Your payment has been processed successfully.</p>
+
+    <div class="card shadow-sm p-4 mt-4">
+        <h4>🛍️ Order Summary</h4>
+        <p><strong>Payment ID:</strong> {{ request.GET.paymentId }}</p>
+        <p><strong>Transaction Token:</strong> {{ request.GET.token }}</p>
+        <p><strong>Payer ID:</strong> {{ request.GET.PayerID }}</p>
+        <p>Your order is now being processed. We will notify you once it's ready.</p>
+    </div>
+
+    <a href="{% url 'index' %}" class="btn btn-primary mt-4">Continue Shopping</a>
+</div>

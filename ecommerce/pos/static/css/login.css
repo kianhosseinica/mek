@@ -1,0 +1,65 @@
+:root {
+    --primary: #0d6efd;
+    --primary-foreground: #ffffff;
+    --secondary: #6c757d;
+    --secondary-foreground: #ffffff;
+    --background: #f8f9fa;
+    --foreground: #212529;
+    --card: #ffffff;
+    --card-foreground: #212529;
+    --border: #dee2e6;
+    --input: #ced4da;
+    --ring: rgba(13, 110, 253, 0.25);
+    --radius: 0.5rem;
+    --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.card {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border-color: var(--primary);
+}
+
+.btn-light {
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+}
+
+.btn-light:hover {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+
+.form-control {
+    border-color: var(--input);
+    border-radius: var(--radius);
+}
+
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem var(--ring);
+}
+
+.numeric-keypad .btn {
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+@media (max-width: 576px) {
+    .card {
+        margin: 1rem;
+    }
+}

@@ -1,0 +1,335 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+    <section class="py-5 mb-5" style="background: url('{% static 'images/background-pattern.jpg' %}');">
+      <div class="container-fluid">
+        <div class="d-flex justify-content-between">
+          <h1 class="page-title pb-2">Shop</h1>
+          <nav class="breadcrumb fs-6">
+            <a class="breadcrumb-item nav-link" href="#">Home</a>
+            <a class="breadcrumb-item nav-link" href="#">Pages</a>
+            <span class="breadcrumb-item active" aria-current="page">Shop</span>
+          </nav>
+        </div>
+      </div>
+    </section>
+
+<div class="shopify-grid">
+    <div class="container-fluid">
+        <div class="row g-5">
+            <!-- Sidebar -->
+            <aside class="col-md-2">
+                <div class="sidebar">
+                    <!-- Search -->
+                    <div class="widget-menu">
+                        <div class="widget-search-bar">
+                            <form role="search" method="get" class="d-flex position-relative">
+                                <input class="form-control form-control-lg rounded-2 bg-light" type="text" name="q" placeholder="Search here" aria-label="Search here">
+                                <button class="btn bg-transparent position-absolute end-0" type="submit">
+                                    <svg width="24" height="24" viewBox="0 0 24 24">
+                                        <use xlink:href="#search"></use>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="widget-product-categories pt-5">
+                        <h5 class="widget-title">Categories</h5>
+                        <ul class="product-categories sidebar-list list-unstyled">
+                            <!-- "All" products link -->
+                            <li class="cat-item">
+                                <a href="{% url 'store:shop' %}" class="nav-link">All</a>
+                            </li>
+                            {% load mptt_tags %}
+                            {% recursetree categories %}
+                                <li class="cat-item">
+                                    {% if not node.is_leaf_node %}
+                                        <!-- Non‑leaf: link to a category view so user can drill down further -->
+                                        <a href="{% url 'store:category' node.slug %}" class="nav-link">{{ node.name }}</a>
+                                    {% else %}
+                                        <!-- Leaf: link to the shop filtered by this category -->
+                                        <a href="{% url 'store:shop' %}?category={{ node.slug }}" class="nav-link">{{ node.name }}</a>
+                                    {% endif %}
+                                    {% if not node.is_leaf_node %}
+                                        <ul class="child-categories">
+                                            {{ children }}
+                                        </ul>
+                                    {% endif %}
+                                </li>
+                            {% endrecursetree %}
+                        </ul>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="widget-product-tags pt-3">
+                        <h5 class="widget-title">Tags</h5>
+                        <ul class="product-tags sidebar-list list-unstyled">
+                            {% for tag in tags %}
+                                <li class="tags-item">
+                                    <a href="#" class="nav-link">{{ tag.name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Brands -->
+                    <div class="widget-product-brands pt-3">
+                        <h5 class="widget-title">Brands</h5>
+                        <ul class="product-tags sidebar-list list-unstyled">
+                            {% for brand in brands %}
+                                <li class="tags-item">
+                                    <a href="#" class="nav-link">{{ brand.name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Price Filter -->
+                    <div class="widget-price-filter pt-3">
+                        <h5 class="widget-title">Filter By Price</h5>
+                        <ul class="product-tags sidebar-list list-unstyled">
+                            <li class="tags-item">
+                                <a href="?price=10" class="nav-link">Less than $10</a>
+                            </li>
+                            <li class="tags-item">
+                                <a href="?price=10-20" class="nav-link">$10 - $20</a>
+                            </li>
+                            <li class="tags-item">
+                                <a href="?price=20-30" class="nav-link">$20 - $30</a>
+                            </li>
+                            <li class="tags-item">
+                                <a href="?price=30-40" class="nav-link">$30 - $40</a>
+                            </li>
+                            <li class="tags-item">
+                                <a href="?price=40-50" class="nav-link">$40 - $50</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="col-md-10">
+    <div class="filter-shop d-flex justify-content-between">
+        <div class="showing-product">
+            <p>Showing {{ products|length }} results</p>
+        </div>
+        <div class="sort-by">
+            <select id="input-sort" class="form-control" onchange="location = this.value;">
+                <option value="?sort=default">Default sorting</option>
+                <option value="?sort=name_asc">Name (A - Z)</option>
+                <option value="?sort=name_desc">Name (Z - A)</option>
+                <option value="?sort=price_asc">Price (Low-High)</option>
+                <option value="?sort=price_desc">Price (High-Low)</option>
+                <option value="?sort=rating_desc">Rating (Highest)</option>
+                <option value="?sort=rating_asc">Rating (Lowest)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Category Grid -->
+    <div class="category-grid row row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4">
+        {% for category in categories %}
+            <div class="col">
+                <div class="category-item text-center">
+                    <figure>
+                        <!-- Clicking on the category triggers the drill-down using preloaded JSON -->
+                        <a href="#" class="category-link" data-slug="{{ category.slug }}" title="{{ category.name }}">
+                            {% if category.image %}
+                                <img src="{{ category.image.url }}" class="img-fluid" alt="{{ category.name }}">
+                            {% else %}
+                                <img src="{% static 'images/default_category.png' %}" class="img-fluid" alt="{{ category.name }}">
+                            {% endif %}
+                        </a>
+                    </figure>
+                    <h3 class="mt-2">{{ category.name }}</h3>
+                </div>
+            </div>
+        {% empty %}
+            <p>No categories found.</p>
+        {% endfor %}
+    </div>
+
+    <!-- jQuery and required libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
+    <script src="{% static 'js/plugins.js' %}"></script>
+    <script src="{% static 'js/script.js' %}"></script>
+
+    <script>
+    // Define the shop URL using Django's URL tag.
+    var shopUrl = "{% url 'store:shop' %}";
+
+    // Parse the nested category data passed from the view.
+    var categoryData = {{ category_tree|safe }};
+    console.log("Preloaded Category Tree:", categoryData);
+
+    // Create a stack to store grid states for drill-down.
+    var gridStack = [];
+
+    // Recursive function to find a node (category or subcategory) by slug.
+    function findNodeBySlug(slug, nodes) {
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].slug === slug) {
+                return nodes[i];
+            }
+            var found = findNodeBySlug(slug, nodes[i].children);
+            if (found) return found;
+            if (nodes[i].subcategories) {
+                found = findNodeBySlug(slug, nodes[i].subcategories);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    // Function to render an array of nodes as a grid with image and name only.
+    function renderNodes(nodes) {
+        if (!nodes || nodes.length === 0) {
+            return '<p>No subcategories available.</p>';
+        }
+        var html = '<div class="row row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4">';
+        nodes.forEach(function(node) {
+            html += '<div class="col">';
+            html += '<div class="category-item text-center">';
+            html += '<figure>';
+            // If the node has further subcategories, set the link to "#" to enable drill down.
+            // Otherwise, link directly to the shop.
+            if ((node.children && node.children.length > 0) || (node.subcategories && node.subcategories.length > 0)) {
+                html += '<a href="#" class="category-link" data-slug="' + node.slug + '" title="' + node.name + '">';
+            } else {
+                html += '<a href="' + shopUrl + '?category=' + node.slug + '" title="' + node.name + '">';
+            }
+            if (node.image_url) {
+                html += '<img src="' + node.image_url + '" alt="' + node.name + '" class="img-fluid">';
+            } else {
+                html += '<img src="" alt="' + node.name + '" class="img-fluid">';
+            }
+            html += '</a>';
+            html += '</figure>';
+            html += '<h3 class="mt-2">' + node.name + '</h3>';
+            html += '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    // Delegate click events for .category-link elements.
+    $(document).on('click', '.category-link', function(e) {
+        // If the link is not "#" (i.e. it's a leaf node), let it navigate normally.
+        if ($(this).attr('href') !== '#') {
+            return;
+        }
+        e.preventDefault();
+        var $link = $(this);
+        var slug = $link.data('slug');
+        console.log("Clicked category:", slug);
+        // Find the clicked node in our nested JSON tree.
+        var node = findNodeBySlug(slug, categoryData);
+        if (!node) {
+            console.log("No node found for slug:", slug);
+            return;
+        }
+        // Merge children from both "children" and "subcategories".
+        var children = [];
+        if (node.children) { children = children.concat(node.children); }
+        if (node.subcategories) { children = children.concat(node.subcategories); }
+        var newGridHtml = renderNodes(children);
+        // Prepend a "Back" button at the top.
+        newGridHtml = '<button class="btn btn-secondary back-button mb-2">Back</button>' + newGridHtml;
+
+        // Get the grid container. This replaces the entire grid view.
+        var $gridContainer = $('.category-grid');
+        // Push the current grid HTML onto the stack.
+        gridStack.push($gridContainer.html());
+        // Replace the grid container with the new grid.
+        $gridContainer.html(newGridHtml);
+    });
+
+    // When the Back button is clicked, restore the previous grid state.
+    $(document).on('click', '.back-button', function(e) {
+        e.preventDefault();
+        var $gridContainer = $('.category-grid');
+        if (gridStack.length > 0) {
+            var prevHtml = gridStack.pop();
+            $gridContainer.html(prevHtml);
+        }
+    });
+    </script>
+
+    <!-- Pagination -->
+    <nav class="navigation paging-navigation text-center py-4">
+        <div class="pagination loop-pagination d-flex justify-content-center align-items-center">
+            {% if products.has_previous %}
+                <a href="?page={{ products.previous_page_number }}">
+                    <svg class="chevron-left pe-3">
+                        <use xlink:href="#chevron-left"></use>
+                    </svg>
+                </a>
+            {% endif %}
+
+            <span aria-current="page" class="page-numbers current pe-3">{{ products.number }}</span>
+
+            {% if products.has_next %}
+                <a href="?page={{ products.next_page_number }}">
+                    <svg class="chevron-right ps-3">
+                        <use xlink:href="#chevron-right"></use>
+                    </svg>
+                </a>
+            {% endif %}
+        </div>
+    </nav>
+</main>
+
+        </div>
+    </div>
+</div>
+
+    <section class="py-5">
+      <div class="container-fluid">
+
+        <div class="bg-secondary py-5 my-5 rounded-5" style="background: url('{% static 'images/bg-leaves-img-pattern.png' %}') no-repeat;">
+          <div class="container my-5">
+            <div class="row">
+              <div class="col-md-6 p-5">
+                <div class="section-header">
+                  <h2 class="section-title display-4">Get <span class="text-primary">25% Discount</span> on your first purchase</h2>
+                </div>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Dictumst amet, metus, sit massa posuere maecenas. At tellus ut nunc amet vel egestas.</p>
+              </div>
+              <div class="col-md-6 p-5">
+                <form>
+                  <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text"
+                      class="form-control form-control-lg" name="name" id="name" placeholder="Name">
+                  </div>
+                  <div class="mb-3">
+                    <label for="" class="form-label">Email</label>
+                    <input type="email" class="form-control form-control-lg" name="email" id="email" placeholder="abc@mail.com">
+                  </div>
+                  <div class="form-check form-check-inline mb-3">
+                    <label class="form-check-label" for="subscribe">
+                    <input class="form-check-input" type="checkbox" id="subscribe" value="subscribe">
+                    Subscribe to the newsletter</label>
+                  </div>
+                  <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-dark btn-lg">Submit</button>
+                  </div>
+                </form>
+
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+{% endblock %}

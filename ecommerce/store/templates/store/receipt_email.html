@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Order Receipt - Mekco Supply</title>
+    <style type="text/css">
+      /* RESET & GLOBAL STYLES */
+      body, table, td, p, a {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+      table { border-collapse: collapse; }
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f9f9f9;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        color: #444;
+      }
+      /* CONTAINER */
+      .email-container {
+        max-width: 600px;
+        margin: 20px auto;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      /* HEADER */
+      .email-header {
+        background-color: #0056b3;
+        text-align: center;
+        padding: 20px;
+      }
+      .email-header img {
+        max-width: 120px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+      }
+      .email-header h1 {
+        margin: 10px 0 0;
+        font-size: 24px;
+        color: #ffffff;
+      }
+      /* BODY */
+      .email-body {
+        padding: 20px;
+      }
+      .email-body h2 {
+        font-size: 20px;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      .order-info p {
+        margin: 4px 0;
+        font-size: 14px;
+      }
+      /* ORDER TABLE */
+      .order-table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+      }
+      .order-table th, .order-table td {
+        padding: 10px;
+        font-size: 14px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+      .order-table th {
+        background-color: #f0f0f0;
+      }
+      /* TOTALS */
+      .totals {
+        margin-top: 20px;
+        font-size: 16px;
+      }
+      .totals p {
+        margin: 5px 0;
+        font-weight: bold;
+      }
+      /* CTA BUTTON */
+      .cta-button {
+        display: inline-block;
+        padding: 12px 20px;
+        background-color: #28a745;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-top: 20px;
+        text-align: center;
+      }
+      /* FOOTER */
+      .email-footer {
+        background-color: #f0f0f0;
+        text-align: center;
+        padding: 15px;
+        font-size: 12px;
+        color: #777;
+      }
+      /* RESPONSIVE STYLES */
+      @media only screen and (max-width: 480px) {
+        .email-container {
+          width: 100% !important;
+          margin: 10px auto !important;
+        }
+        .email-header h1 {
+          font-size: 20px;
+        }
+        .email-body h2 {
+          font-size: 18px;
+        }
+        .order-table th, .order-table td {
+          font-size: 12px;
+          padding: 6px;
+        }
+        .cta-button {
+          padding: 10px 16px;
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <!-- Header Section -->
+      <div class="email-header">
+        <img src="https://mekcosupply.ca/static/img/Mekco-Supply-logo-300px.png" alt="Mekco Supply Logo">
+        <h1>Order Receipt</h1>
+      </div>
+      
+      <!-- Body Section -->
+      <div class="email-body">
+        <h2>Thank You, {{ order.first_name }} {{ order.last_name }}!</h2>
+        <div class="order-info">
+          <p><strong>Order Number:</strong> {{ order.order_id }}</p>
+          <p><strong>Order Date:</strong> {{ order.created_at }}</p>
+          <p><strong>Email:</strong> {{ order.email }}</p>
+        </div>
+        
+        <!-- Order Items Table -->
+        <table class="order-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Details</th>
+              <th>Qty</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order_items %}
+            <tr>
+              <td>
+                {% if item.product_variation %}
+                  {{ item.product_variation.product.name }}
+                {% elif item.product %}
+                  {{ item.product.name }}
+                {% endif %}
+              </td>
+              <td>
+                {% if item.product_variation %}
+                  {% if item.product_variation.size %}
+                    <strong>Size:</strong> {{ item.product_variation.size.name }}<br>
+                  {% endif %}
+                  {% if item.product_variation.color %}
+                    <strong>Color:</strong> {{ item.product_variation.color }}<br>
+                  {% endif %}
+                {% endif %}
+                <strong>Type:</strong> {{ item.get_purchase_type_display|default:"Standard" }}
+              </td>
+              <td>{{ item.quantity }}</td>
+              <td>${{ item.total_price|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" align="center">No items found in your order.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        <!-- Totals Section -->
+        <div class="totals">
+          <p>Subtotal: ${{ order.subtotal|floatformat:2 }}</p>
+          <p>Tax (13%): ${{ order.tax_amount|floatformat:2 }}</p>
+            <p>Shipping : ${{ order.shipping_cost|floatformat:2 }}</p>
+
+          <p>Total: ${{ order.total_price|floatformat:2 }}</p>
+        </div>
+        
+        <!-- CTA Button -->
+        <p style="text-align: center;">
+          <a href="{% url 'store:shop' %}" class="cta-button">Continue Shopping</a>
+        </p>
+      </div>
+      
+      <!-- Footer Section -->
+      <div class="email-footer">
+        <p>&copy; 2025 Mekco Supply. All rights reserved.</p>
+        <p>For questions, contact us at support@mekcosupply.ca</p>
+      </div>
+    </div>
+  </body>
+</html>

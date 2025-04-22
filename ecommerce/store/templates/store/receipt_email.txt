@@ -1,0 +1,24 @@
+Hello {{ order.first_name }} {{ order.last_name }},
+
+Thank you for your order!
+
+Order Number: {{ order.order_id }}
+Email: {{ order.email }}
+
+Order Summary:
+{% for item in order_items %}
+- {% if item.product_variation %}{{ item.product_variation.product.name }}{% elif item.product %}{{ item.product.name }}{% endif %} (x{{ item.quantity }}) - ${{ item.total_price|floatformat:2 }}
+{% empty %}
+No items found in your order.
+{% endfor %}
+
+Subtotal: ${{ order.subtotal|floatformat:2 }}
+Tax (13%): ${{ order.tax_amount|floatformat:2 }}
+Total: ${{ order.total_price|floatformat:2 }}
+
+If you have any questions, please contact us.
+
+Thank you for shopping with us!
+
+Best regards,
+Your Company Name

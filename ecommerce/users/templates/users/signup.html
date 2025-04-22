@@ -1,0 +1,174 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Page Banner -->
+<section class="py-5 mb-5" style="background: url('{% static 'images/background-pattern.jpg' %}');">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between">
+      <h1 class="page-title pb-2">Signup</h1>
+      <nav class="breadcrumb fs-6">
+        <a class="breadcrumb-item nav-link" href="#">Home</a>
+        <a class="breadcrumb-item nav-link" href="#">Pages</a>
+        <span class="breadcrumb-item active" aria-current="page">Signup</span>
+      </nav>
+    </div>
+  </div>
+</section>
+
+<!-- Signup Form Section -->
+<section id="signup-form" class="py-5">
+  <div class="container-sm">
+    <div class="row justify-content-center">
+      <div class="col-lg-5 p-5 border shadow-sm rounded-3 bg-light mx-auto">
+        <h5 class="text-uppercase mb-4 text-center">Create Your Account</h5>
+
+        <form id="signupForm" method="POST" action="{% url 'users:signup' %}">
+          {% csrf_token %}
+          <input type="hidden" name="verification_code" id="verification_code">
+
+          <!-- Step 1 -->
+          <div id="step1">
+            <div class="mb-3"><input type="text" id="phone_number" name="phone_number" class="form-control form-control-lg" placeholder="Phone Number" required></div>
+            <div class="mb-3"><input type="email" name="email" class="form-control form-control-lg" placeholder="Email Address" required></div>
+            <div class="mb-3"><input type="text" name="first_name" class="form-control form-control-lg" placeholder="First Name" required></div>
+            <div class="mb-3"><input type="text" name="last_name" class="form-control form-control-lg" placeholder="Last Name" required></div>
+            <div class="mb-3"><input type="password" name="password1" class="form-control form-control-lg" placeholder="Password" required></div>
+            <div class="mb-3"><input type="password" name="password2" class="form-control form-control-lg" placeholder="Confirm Password" required></div>
+            <div class="d-grid gap-2"><button type="button" id="nextButton" class="btn btn-primary btn-lg">Next</button></div>
+          </div>
+
+          <!-- Step 2: 4-digit PIN -->
+          <div id="pin4Step" style="display: none;">
+            <p class="text-center text-muted mb-4">A 4-digit PIN has been sent to your phone or email.</p>
+            <div class="mb-3 d-flex justify-content-center gap-2">
+              <input type="text" id="pin4_1" class="form-control form-control-lg text-center" maxlength="1" style="width: 50px;" required>
+              <input type="text" id="pin4_2" class="form-control form-control-lg text-center" maxlength="1" style="width: 50px;" required>
+              <input type="text" id="pin4_3" class="form-control form-control-lg text-center" maxlength="1" style="width: 50px;" required>
+              <input type="text" id="pin4_4" class="form-control form-control-lg text-center" maxlength="1" style="width: 50px;" required>
+            </div>
+            <div class="d-grid gap-2"><button type="button" id="nextPin4Button" class="btn btn-primary btn-lg">Next</button></div>
+            <div class="mt-3 text-center"><a href="#" class="text-decoration-none">Resend 4-Digit PIN</a></div>
+          </div>
+
+          <!-- Step 3: Additional Info -->
+          <div id="step2" style="display: none;">
+            <div class="mb-3"><input type="text" name="company" class="form-control form-control-lg" placeholder="Company (optional)"></div>
+            <div class="mb-3"><input type="date" name="birth_date" class="form-control form-control-lg"></div>
+            <div class="mb-3"><input type="text" name="country" class="form-control form-control-lg" placeholder="Country (optional)"></div>
+            <div class="mb-3"><input type="text" name="address" class="form-control form-control-lg" placeholder="Address (optional)"></div>
+            <div class="mb-3"><input type="text" name="address2" class="form-control form-control-lg" placeholder="Address Line 2 (optional)"></div>
+            <div class="mb-3"><input type="text" name="city" class="form-control form-control-lg" placeholder="City (optional)"></div>
+            <div class="mb-3"><input type="text" name="province" class="form-control form-control-lg" placeholder="Province (optional)"></div>
+            <div class="mb-3"><input type="text" name="postal_code" class="form-control form-control-lg" placeholder="Postal Code (optional)"></div>
+            <div class="d-grid gap-2"><button type="submit" class="btn btn-success btn-lg">Complete Signup</button></div>
+          </div>
+        </form>
+
+        <div class="mt-3 text-center">Already have an account? <a href="{% url 'users:login' %}" class="text-decoration-none">Log in</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // ✅ Auto-format phone input
+    const phoneInput = document.getElementById("phone_number");
+    if (phoneInput) {
+      phoneInput.addEventListener("input", function (e) {
+        const input = e.target.value.replace(/\D/g, "");
+        let formatted = "";
+        if (input.length > 0) formatted = "(" + input.substring(0, 3);
+        if (input.length >= 4) formatted += ") " + input.substring(3, 6);
+        if (input.length >= 7) formatted += "-" + input.substring(6, 10);
+        e.target.value = formatted;
+      });
+    }
+
+    // ✅ "Next" on step 1 → Send PIN if not exists
+    document.getElementById("nextButton").addEventListener("click", function () {
+      const phone = document.getElementById("phone_number").value.trim();
+      const email = document.querySelector('input[name="email"]').value.trim();
+      const phoneDigits = phone.replace(/\D/g, "");
+
+      if (!phone || !email) {
+        alert("Please enter both phone number and email.");
+        return;
+      }
+
+      fetch(`/users/ajax/send-pin/?phone=${encodeURIComponent(phoneDigits)}&email=${encodeURIComponent(email)}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.exists) {
+            alert(data.field === "phone" ? "❌ Phone number already exists." : "❌ Email already exists.");
+          } else if (data.success) {
+            // ✅ Local form validation before going to PIN step
+            const step1 = document.getElementById("step1");
+            const inputs = step1.querySelectorAll("input");
+            let valid = true;
+            inputs.forEach(input => {
+              if (!input.checkValidity()) {
+                valid = false;
+                input.reportValidity();
+              }
+            });
+            if (valid) {
+              step1.style.display = "none";
+              document.getElementById("pin4Step").style.display = "block";
+            }
+          } else {
+            alert("❌ " + data.message);
+          }
+        })
+        .catch(error => {
+          console.error("❌ AJAX error:", error);
+          alert("Something went wrong. Please try again.");
+        });
+    });
+
+    // ✅ PIN input auto jump
+    const pin4Inputs = document.querySelectorAll('#pin4Step input[type="text"]');
+    pin4Inputs.forEach((input, index) => {
+      input.addEventListener("input", function () {
+        if (this.value.length === 1 && index < pin4Inputs.length - 1) {
+          pin4Inputs[index + 1].focus();
+        }
+      });
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Backspace" && this.value.length === 0 && index > 0) {
+          pin4Inputs[index - 1].focus();
+        }
+      });
+    });
+
+    // ✅ "Next" on PIN step → Go to final step
+    document.getElementById("nextPin4Button").addEventListener("click", function () {
+      let valid = true;
+      pin4Inputs.forEach((input) => {
+        if (!input.checkValidity()) {
+          valid = false;
+          input.reportValidity();
+        }
+      });
+
+      if (valid) {
+        document.getElementById("pin4Step").style.display = "none";
+        document.getElementById("step2").style.display = "block";
+      }
+    });
+
+    // ✅ Combine PIN digits into hidden field
+    document.getElementById("signupForm").addEventListener("submit", function () {
+      const pin = [
+        document.getElementById("pin4_1").value,
+        document.getElementById("pin4_2").value,
+        document.getElementById("pin4_3").value,
+        document.getElementById("pin4_4").value
+      ].join("");
+      document.getElementById("verification_code").value = pin;
+    });
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Get Shipping Rates</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <h2>Get Shipping Rates</h2>
+    <form id="ratesForm" class="needs-validation" novalidate>
+      {% csrf_token %}
+      
+      <h4>Destination Address</h4>
+      <div class="mb-3">
+        <label for="destName" class="form-label">Name</label>
+        <input type="text" class="form-control" id="destName" required>
+      </div>
+      <div class="mb-3">
+        <label for="destStreet1" class="form-label">Street 1</label>
+        <input type="text" class="form-control" id="destStreet1" required>
+      </div>
+      <div class="mb-3">
+        <label for="destStreet2" class="form-label">Street 2</label>
+        <input type="text" class="form-control" id="destStreet2">
+      </div>
+      <div class="mb-3">
+        <label for="destCity" class="form-label">City</label>
+        <input type="text" class="form-control" id="destCity" required>
+      </div>
+      <div class="mb-3">
+        <label for="destState" class="form-label">State/Province</label>
+        <input type="text" class="form-control" id="destState" required>
+      </div>
+      <div class="mb-3">
+        <label for="destZip" class="form-label">ZIP/Postal Code</label>
+        <input type="text" class="form-control" id="destZip" required>
+      </div>
+      <div class="mb-3">
+        <label for="destCountry" class="form-label">Country</label>
+        <input type="text" class="form-control" id="destCountry" required>
+      </div>
+      <div class="mb-3">
+        <label for="destPhone" class="form-label">Phone</label>
+        <input type="tel" class="form-control" id="destPhone" required>
+      </div>
+
+      <h4>Parcel Details</h4>
+      <div class="mb-3">
+        <label for="parcelLength" class="form-label">Length</label>
+        <input type="number" step="any" class="form-control" id="parcelLength" required>
+      </div>
+      <div class="mb-3">
+        <label for="parcelWidth" class="form-label">Width</label>
+        <input type="number" step="any" class="form-control" id="parcelWidth" required>
+      </div>
+      <div class="mb-3">
+        <label for="parcelHeight" class="form-label">Height</label>
+        <input type="number" step="any" class="form-control" id="parcelHeight" required>
+      </div>
+      <div class="mb-3">
+        <label for="parcelWeight" class="form-label">Weight</label>
+        <input type="number" step="any" class="form-control" id="parcelWeight" required>
+      </div>
+
+      <!-- Optional: Carrier Accounts -->
+      <div class="mb-3">
+        <label for="carrierAccounts" class="form-label">
+          Carrier Account IDs (comma-separated, optional)
+        </label>
+        <input type="text" class="form-control" id="carrierAccounts" placeholder="ca_123, ca_456">
+      </div>
+
+      <button type="submit" class="btn btn-primary">Get Rates</button>
+    </form>
+
+    <div id="results" class="mt-4"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById("ratesForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      
+      const toAddress = {
+        name: document.getElementById("destName").value,
+        street1: document.getElementById("destStreet1").value,
+        street2: document.getElementById("destStreet2").value,
+        city: document.getElementById("destCity").value,
+        state: document.getElementById("destState").value,
+        zip: document.getElementById("destZip").value,
+        country: document.getElementById("destCountry").value,
+        phone: document.getElementById("destPhone").value,
+      };
+
+      const parcel = {
+        length: parseFloat(document.getElementById("parcelLength").value),
+        width: parseFloat(document.getElementById("parcelWidth").value),
+        height: parseFloat(document.getElementById("parcelHeight").value),
+        weight: parseFloat(document.getElementById("parcelWeight").value),
+      };
+
+      const carrierAccountsInput = document.getElementById("carrierAccounts").value.trim();
+      let carrierAccounts = null;
+      if (carrierAccountsInput) {
+        carrierAccounts = carrierAccountsInput.split(",").map(id => id.trim());
+      }
+
+      const payload = {
+        to_address: toAddress,
+        parcel: parcel,
+      };
+      if (carrierAccounts) {
+        payload["carrier_accounts"] = carrierAccounts;
+      }
+
+      fetch("{% url 'store:shipments_rates' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        const resultsDiv = document.getElementById("results");
+        if (data.rates) {
+          let html = `<h3>Shipping Rates:</h3><ul>`;
+          data.rates.forEach(rate => {
+            html += `<li>${rate.carrier} - ${rate.service}: ${rate.rate} ${rate.currency} (${rate.delivery_days} day(s))</li>`;
+          });
+          html += "</ul>";
+          resultsDiv.innerHTML = html;
+        } else if (data.error) {
+          let detailsHtml = data.details ? JSON.stringify(data.details, null, 2) : "";
+          resultsDiv.innerHTML = `<p class="text-danger">Error: ${data.error}</p><pre>${detailsHtml}</pre>`;
+        }
+      })
+      .catch(err => {
+        document.getElementById("results").innerHTML = `<p class="text-danger">Error: ${err}</p>`;
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,503 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="py-5 mb-5" style="background: url('{% static 'images/background-pattern.jpg' %}');">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between">
+      <h1 class="page-title pb-2">Checkout</h1>
+      <nav class="breadcrumb fs-6">
+        <a class="breadcrumb-item nav-link" href="#">Home</a>
+        <a class="breadcrumb-item nav-link" href="#">Pages</a>
+        <span class="breadcrumb-item active" aria-current="page">Checkout</span>
+      </nav>
+    </div>
+  </div>
+</section>
+
+<section class="shopify-cart checkout-wrap py-5">
+  <div class="container-fluid">
+    <form class="form-group" action="{% url 'store:checkout' %}" method="POST" id="checkoutForm">
+      {% csrf_token %}
+      <!-- Hidden fields for totals coming from the front end -->
+      <input type="hidden" id="shipping_price" name="shipping_price" value="0.00">
+      <input type="hidden" id="subtotal"       name="subtotal"       value="{{ subtotal }}">
+      <input type="hidden" id="tax_amount"     name="tax_amount"     value="{{ tax_amount }}">
+      <input type="hidden" id="total"          name="total"          value="{{ total }}">
+      
+      <div class="row d-flex flex-wrap">
+        <!-- Billing Details Column -->
+        <div class="col-lg-6">
+          <h4 class="text-dark pb-4">Billing Details</h4>
+          <div class="billing-details">
+            <label for="fname">First Name*</label>
+            <input type="text" id="fname" name="firstname" class="form-control mt-2 mb-4 ps-3" required>
+            <label for="lname">Last Name*</label>
+            <input type="text" id="lname" name="lastname" class="form-control mt-2 mb-4 ps-3" required>
+            <label for="cname">Company Name (optional)</label>
+            <input type="text" id="cname" name="companyname" class="form-control mt-2 mb-4">
+            <label for="country">Country / Region*</label>
+            <select name="country" class="form-select form-control mt-2 mb-4" required>
+              <option value="Canada" selected>Canada</option>
+            </select>
+            <label for="address1">Street Address*</label>
+            <input type="text" id="address1" name="address1" placeholder="House number and street name" class="form-control mt-3 ps-3 mb-3" required>
+            <input type="text" id="address2" name="address2" placeholder="Apartment, suite, etc." class="form-control ps-3 mb-4">
+            <label for="city">Town / City*</label>
+            <input type="text" id="city" name="city" class="form-control mt-3 ps-3 mb-4" required>
+            <label for="state">Province*</label>
+            <select name="state" class="form-select form-control mt-2 mb-4" required>
+              <option value="ON" selected>Ontario</option>
+              <option value="BC">British Columbia</option>
+              <option value="QC">Quebec</option>
+              <option value="AB">Alberta</option>
+              <option value="MB">Manitoba</option>
+              <option value="SK">Saskatchewan</option>
+              <option value="NB">New Brunswick</option>
+              <option value="NS">Nova Scotia</option>
+              <option value="PE">Prince Edward Island</option>
+              <option value="NL">Newfoundland and Labrador</option>
+              <option value="YT">Yukon</option>
+              <option value="NT">Northwest Territories</option>
+              <option value="NU">Nunavut</option>
+            </select>
+            <label for="zip">Postal Code*</label>
+            <input type="text" id="zip" name="zip" class="form-control mt-2 mb-4 ps-3" required>
+            <label for="phone">Phone*</label>
+            <input type="text" id="phone" name="phone" class="form-control mt-2 mb-4 ps-3" required>
+            <label for="email">Email Address*</label>
+            <input type="email" id="email" name="email" class="form-control mt-2 mb-4 ps-3" required>
+          </div>
+        </div>
+
+        <!-- Right Column: Shipping & Order Details -->
+        <div class="col-lg-6">
+          <h4 class="text-dark pb-4">Order & Shipping</h4>
+          <!-- Option: Different Shipping Address -->
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="diffShipping" onchange="toggleShippingAddress()">
+            <label class="form-check-label" for="diffShipping">
+              My shipping address is different from my billing address.
+            </label>
+          </div>
+          <!-- Shipping Address Fields (hidden by default) -->
+          <div id="shippingAddressFields" style="display: none; border: 1px solid #ddd; padding: 15px; margin-bottom: 20px;">
+            <h5 class="mb-3">Shipping Address</h5>
+            <label for="shipping_fname">First Name</label>
+            <input type="text" id="shipping_fname" name="shipping_firstname" class="form-control mt-2 mb-3 ps-3">
+            <label for="shipping_lname">Last Name</label>
+            <input type="text" id="shipping_lname" name="shipping_lastname" class="form-control mt-2 mb-3 ps-3">
+            <label for="shipping_cname">Company Name (optional)</label>
+            <input type="text" id="shipping_cname" name="shipping_companyname" class="form-control mt-2 mb-3">
+            <label for="shipping_address1">Street Address</label>
+            <input type="text" id="shipping_address1" name="shipping_address1" placeholder="House number and street name" class="form-control mt-2 mb-3 ps-3">
+            <input type="text" id="shipping_address2" name="shipping_address2" placeholder="Apartment, suite, etc." class="form-control mb-3 ps-3">
+            <label for="shipping_city">Town / City</label>
+            <input type="text" id="shipping_city" name="shipping_city" class="form-control mt-2 mb-3 ps-3">
+            <label for="shipping_state">Province</label>
+            <select name="shipping_state" id="shipping_state" class="form-select form-control mt-2 mb-3">
+              <option value="" selected>-- Select Province --</option>
+              <option value="ON">Ontario</option>
+              <option value="BC">British Columbia</option>
+              <option value="QC">Quebec</option>
+              <option value="AB">Alberta</option>
+              <option value="MB">Manitoba</option>
+              <option value="SK">Saskatchewan</option>
+              <option value="NB">New Brunswick</option>
+              <option value="NS">Nova Scotia</option>
+              <option value="PE">Prince Edward Island</option>
+              <option value="NL">Newfoundland and Labrador</option>
+              <option value="YT">Yukon</option>
+              <option value="NT">Northwest Territories</option>
+              <option value="NU">Nunavut</option>
+            </select>
+            <label for="shipping_zip">Postal Code</label>
+            <input type="text" id="shipping_zip" name="shipping_zip" class="form-control mt-2 mb-3 ps-3">
+            <label for="shipping_phone">Phone</label>
+            <input type="text" id="shipping_phone" name="shipping_phone" class="form-control mt-2 mb-3 ps-3">
+            <label for="shipping_email">Email Address</label>
+            <input type="email" id="shipping_email" name="shipping_email" class="form-control mt-2 mb-3 ps-3">
+          </div>
+
+          <!-- Additional Information -->
+          <div class="billing-details mb-4">
+            <label for="order_notes">Order Notes (optional)</label>
+            <textarea id="order_notes" name="order_notes" class="form-control pt-3 pb-3 ps-3 mt-2"
+                      placeholder="Notes about your order, special instructions, etc."></textarea>
+          </div>
+
+          <!-- Fulfillment Options -->
+          <div class="list-group mt-5 mb-3">
+            <label class="list-group-item">
+              <input class="form-check-input" type="radio" name="fulfillment_method" value="pickup"
+                     checked onclick="toggleShippingRate(false)">
+              <span><strong>Pickup at Store</strong></span>
+            </label>
+            <label class="list-group-item">
+              <input class="form-check-input" type="radio" name="fulfillment_method" value="delivery"
+                     onclick="toggleShippingRate(true)">
+              <span><strong>Delivery</strong></span>
+            </label>
+          </div>
+
+          <!-- Shipping Rate & Box Recommendation Details -->
+          <div id="shipping-rate-section" style="display: none; border: 1px solid #ddd; padding: 15px; margin-bottom: 20px;">
+            <h5 class="mb-3">Shipping & Box Recommendation Details</h5>
+            <p>Click the button below to get shipping rates and view the recommended box size for your cart.</p>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="addInsurance" checked>
+              <label class="form-check-label" for="addInsurance">Add Insurance</label>
+            </div>
+            <!-- Button to get shipping rates and box recommendation -->
+            <button type="button" class="btn btn-secondary mb-2" id="getShippingRateBtn">Get Shipping Rates & Box Recommendation</button>
+            <!-- Container to display shipping options -->
+            <div id="shipping-rate-result" style="margin-top: 10px;"></div>
+            <!-- Best Box Recommendation -->
+            <div id="bestBoxResult" style="margin-top: 20px;"></div>
+            <!-- Confirm Shipping Rate button -->
+            <button type="button" class="btn btn-primary mt-2" id="confirmShippingRateBtn" style="display: none;">Confirm Shipping Rate</button>
+          </div>
+
+          <!-- Cart Totals Section -->
+          <div class="your-order mt-5">
+            <h4 class="display-7 text-dark pb-4">Cart Totals</h4>
+            <!-- Hidden fields for cart weight and aggregated dimensions -->
+            <span id="cart-total-weight" style="display: none;">{{ cart_weight|floatformat:2 }}</span>
+            <span id="cart-length" style="display: none;">{{ cart_length }}</span>
+            <span id="cart-width" style="display: none;">{{ cart_width }}</span>
+            <span id="cart-height" style="display: none;">{{ cart_height }}</span>
+            <span id="hidden-subtotal" style="display: none;">{{ subtotal|floatformat:2 }}</span>
+            <span id="hidden-tax" style="display: none;">{{ tax_amount|floatformat:2 }}</span>
+            <div class="total-price">
+              <table cellspacing="0" class="table">
+                <tbody>
+                  <tr class="subtotal border-top border-bottom pt-2 pb-2 text-uppercase">
+                    <th>Subtotal</th>
+                    <td>$<bdi id="subtotalDisplay">{{ subtotal|floatformat:2 }}</bdi></td>
+                  </tr>
+                  <tr class="tax border-bottom pt-2 pb-2 text-uppercase">
+                    <th>HST (13%)</th>
+                    <td>$<bdi id="taxDisplay">{{ tax_amount|floatformat:2 }}</bdi></td>
+                  </tr>
+                  <tr class="shipping border-bottom pt-2 pb-2 text-uppercase">
+                    <th>Shipping</th>
+                    <td>$<bdi id="shipping-cost">0.00</bdi></td>
+                  </tr>
+                  <tr class="order-total border-bottom pt-2 pb-2 text-uppercase">
+                    <th>Total</th>
+                    <td>$<bdi id="final-total">{{ total|floatformat:2 }}</bdi></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Payment Options -->
+            <div class="list-group mt-5 mb-3">
+              <label class="list-group-item">
+                <input class="form-check-input" type="radio" name="payment_method" value="bank"
+                       checked onclick="togglePayPal(false)">
+                <span><strong>Direct Bank Transfer</strong></span>
+              </label>
+              <label class="list-group-item">
+                <input class="form-check-input" type="radio" name="payment_method" value="check"
+                       onclick="togglePayPal(false)">
+                <span><strong>Check Payments</strong></span>
+              </label>
+              <label class="list-group-item">
+                <input class="form-check-input" type="radio" name="payment_method" value="pickup"
+                       onclick="togglePayPal(false)">
+                <span><strong>Pay at Store</strong></span>
+              </label>
+              <label class="list-group-item">
+                <input class="form-check-input" type="radio" name="payment_method" value="paypal"
+                       onclick="togglePayPal(true)">
+                <span><strong>PayPal</strong></span>
+              </label>
+            </div>
+
+            <!-- Place Order Button & PayPal Buttons -->
+            <button type="submit" class="btn btn-dark btn-lg w-100" id="placeOrderBtn">Place Order</button>
+            <div id="paypal-button-container" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- External Scripts -->
+<script src="https://www.paypal.com/sdk/js?client-id={{ PAYPAL_CLIENT_ID }}&currency=CAD&intent=capture&enable-funding=venmo"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  // Toggle shipping address display.
+  function toggleShippingAddress() {
+    var diffBox = document.getElementById("diffShipping");
+    var shippingFields = document.getElementById("shippingAddressFields");
+    shippingFields.style.display = diffBox.checked ? "block" : "none";
+  }
+  window.toggleShippingAddress = toggleShippingAddress;
+
+  // Toggle shipping rate & box recommendation section display.
+  function toggleShippingRate(show) {
+    document.getElementById("shipping-rate-section").style.display = show ? "block" : "none";
+    if (!show) {
+      document.getElementById("shipping-cost").textContent = "0.00";
+      recalcTotal();
+    }
+  }
+  window.toggleShippingRate = toggleShippingRate;
+
+  // Recalculate final total using the hidden inputs.
+  function recalcTotal() {
+    let sub  = parseFloat(document.getElementById("subtotal").value)     || 0;
+    let tax  = parseFloat(document.getElementById("tax_amount").value)   || 0;
+    let ship = parseFloat(document.getElementById("shipping_price").value)|| 0;
+    let tot  = (sub + tax + ship).toFixed(2);
+    document.getElementById("final-total").textContent = tot;
+    document.getElementById("total").value         = tot;
+  }
+  window.recalcTotal = recalcTotal;
+
+  // Global array to store shipping options.
+  let shippingRates = [];
+
+  // Handle "Get Shipping Rates & Box Recommendation" button click.
+  document.getElementById("getShippingRateBtn").addEventListener("click", function() {
+    fetch("{% url 'store:recommend_box' %}")
+      .then(response => response.json())
+      .then(data => {
+        console.log("Received cart & box recommendation data:", data);
+        let cartWeight = parseFloat(data.cart_weight) || 0;
+        let bestBox    = data.best_box;
+        let newLength  = bestBox ? parseFloat(bestBox.box_length_cm) : 0;
+        let newWidth   = bestBox ? parseFloat(bestBox.box_width_cm)   : 0;
+        let newHeight  = bestBox ? parseFloat(bestBox.box_height_cm)  : 0;
+
+        // Example shippingPrice calc ($5 per box)
+        let boxesNeeded   = bestBox ? bestBox.boxes_needed : 0;
+        let shippingPrice = (boxesNeeded * 5.00).toFixed(2);
+
+        // Update hidden shipping_price
+        document.getElementById("shipping_price").value = shippingPrice;
+
+        // Build payload...
+        let useShipping = document.getElementById("diffShipping").checked;
+        let name, company, address1, address2, city, province_code, postal_code, phone, email;
+        if (useShipping) {
+          name         = (document.getElementById("shipping_fname").value||"")+" "+(document.getElementById("shipping_lname").value||"");
+          company      = document.getElementById("shipping_cname").value||"N/A";
+          address1     = document.getElementById("shipping_address1").value;
+          address2     = document.getElementById("shipping_address2").value;
+          city         = document.getElementById("shipping_city").value;
+          province_code= document.getElementById("shipping_state").value;
+          postal_code  = document.getElementById("shipping_zip").value;
+          phone        = document.getElementById("shipping_phone").value;
+          email        = document.getElementById("shipping_email").value;
+        } else {
+          name         = document.getElementById("fname").value+" "+document.getElementById("lname").value;
+          company      = document.getElementById("cname").value||"N/A";
+          address1     = document.getElementById("address1").value;
+          address2     = document.getElementById("address2").value;
+          city         = document.getElementById("city").value;
+          province_code= document.querySelector('select[name="state"]').value;
+          postal_code  = document.getElementById("zip").value;
+          phone        = document.getElementById("phone").value;
+          email        = document.getElementById("email").value;
+        }
+        let insured = document.getElementById("addInsurance").checked;
+
+        let shippingDetails = {
+          name, company, address1, address2, city, province_code,
+          postal_code, country_code:"CA", phone, email, is_residential:true
+        };
+        let packageDetails = {
+          weight: cartWeight, length: newLength, width: newWidth,
+          height: newHeight, size_unit:"cm", signature_confirmation:true,
+          insured, region:null,
+          tax_identifier:{tax_type:"IOSS",number:"IM1234567890",issuing_authority:"GB"},
+          items:[]
+        };
+        let payload = Object.assign({}, packageDetails, shippingDetails);
+
+        fetch("{% url 'store:get_rate' %}", {
+          method:"POST",
+          headers:{"Content-Type":"application/json","X-CSRFToken":"{{ csrf_token }}"},
+          body: JSON.stringify(payload)
+        })
+        .then(r=>r.json())
+        .then(data=>{
+          let apiResp = data.shipping_api_response;
+          if(apiResp.success && apiResp.rates.length){
+            shippingRates = apiResp.rates;
+            let html = "<table class='table table-bordered'><thead><tr>"
+                     + "<th>Select</th><th>Option</th><th>Base Rate</th><th>Insurance</th><th>Total</th><th>Delivery Days</th>"
+                     + "</tr></thead><tbody>";
+            shippingRates.forEach((rate,i)=>{
+              let ins = "";
+              (rate.add_ons||[]).forEach(a=>{ if(a.type.toLowerCase()==="insurance") ins = parseFloat(a.cost).toFixed(2)+" "+a.currency; });
+              html += `<tr>
+                        <td><input type='radio' name='shipping_option' value='${i}'></td>
+                        <td>${rate.postage_type}</td>
+                        <td>${parseFloat(rate.base_rate).toFixed(2)}</td>
+                        <td>${ins}</td>
+                        <td>${parseFloat(rate.total).toFixed(2)}</td>
+                        <td>${rate.delivery_days}</td>
+                       </tr>`;
+            });
+            html += "</tbody></table>";
+            document.getElementById("shipping-rate-result").innerHTML = html;
+            document.getElementById("confirmShippingRateBtn").style.display = "block";
+          } else {
+            document.getElementById("shipping-rate-result").textContent = "No shipping rate found.";
+            document.getElementById("confirmShippingRateBtn").style.display = "none";
+          }
+          // Best box display (unchanged)...
+          let bestBoxHtml = "<h5>Best Box Recommendation</h5>";
+          if (data.best_box && data.best_box.box_name) {
+            bestBoxHtml += `<p><strong>Box:</strong> ${data.best_box.box_name}</p>
+                            <p><strong>Dimensions (cm):</strong> ${data.best_box.box_length_cm} x ${data.best_box.box_width_cm} x ${data.best_box.box_height_cm}</p>
+                            <p><strong>Volume:</strong> ${data.best_box.box_volume} cm³</p>
+                            <p><strong>Boxes Needed:</strong> ${data.best_box.boxes_needed}</p>`;
+          } else {
+            bestBoxHtml += "<p>No box recommendation available.</p>";
+          }
+          document.getElementById("bestBoxResult").innerHTML = bestBoxHtml;
+        })
+        .catch(err=>{
+          console.error("Error:", err);
+          document.getElementById("shipping-rate-result").textContent = "Error fetching rate.";
+        });
+      })
+      .catch(err=>{
+        console.error("Error fetching cart data:", err);
+      });
+  });
+
+  // Handle "Confirm Shipping Rate" button click.
+  document.getElementById("confirmShippingRateBtn").addEventListener("click", function() {
+    let sel = document.querySelector('input[name="shipping_option"]:checked');
+    if (!sel) { alert("Please select a shipping option."); return; }
+    let rate = shippingRates[+sel.value];
+    if (rate) {
+      let cost = parseFloat(rate.total).toFixed(2);
+      document.getElementById("shipping-cost").textContent = cost;
+      // **update hidden**
+      document.getElementById("shipping_price").value = cost;
+      recalcTotal();
+      this.style.display = "none";
+      document.getElementById("getShippingRateBtn").disabled = true;
+    }
+  });
+
+  // PayPal Smart Buttons and toggle logic.
+  let paypalOrderCreated = false;
+  function togglePayPal(show) {
+    document.getElementById("paypal-button-container").style.display = show ? "block" : "none";
+    document.getElementById("placeOrderBtn").style.display             = show ? "none"  : "block";
+  }
+  window.togglePayPal = togglePayPal;
+
+  paypal.Buttons({
+    style: {
+      layout: 'vertical',
+      color:  'blue',
+      shape:  'rect',
+      label:  'paypal'
+    },
+    onClick: function(data, actions) {
+      if (paypalOrderCreated) return actions.reject();
+      paypalOrderCreated = true;
+      return actions.resolve();
+    },
+    createOrder: function(data, actions) {
+      let formElem = document.getElementById('checkoutForm');
+      let formData = new FormData(formElem);
+      formData.set("payment_method", "paypal");
+      document.getElementById("paypal-button-container").innerHTML = "<p>Processing your order...</p>";
+
+      // 1) POST to /checkout to store session
+      return fetch('{% url "store:checkout" %}', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Checkout request failed: " + response.statusText);
+        return response.json();
+      })
+      .then(result => {
+        if (result.message !== "session_stored") {
+          throw new Error("Session data not stored properly.");
+        }
+        // 2) Build JSON payload from hidden inputs
+        let payload = {
+          subtotal:       parseFloat(formData.get("subtotal")),
+          tax_amount:     parseFloat(formData.get("tax_amount")),
+          shipping_price: parseFloat(formData.get("shipping_price")),
+          total:          parseFloat(formData.get("total")),
+          currency:       "CAD"
+        };
+        return fetch('{% url "store:create_paypal_order" %}', {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken":   "{{ csrf_token }}"
+          },
+          body: JSON.stringify(payload)
+        });
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("PayPal Order creation failed: " + response.statusText);
+        return response.json();
+      })
+      .then(order => {
+        if (order.id && order.approval_url) {
+          setTimeout(function(){
+            window.location.replace(order.approval_url);
+          }, 500);
+          return order.id;
+        } else {
+          throw new Error("Invalid PayPal order response.");
+        }
+      })
+      .catch(error => {
+        console.error("Order Creation Error:", error);
+        document.getElementById("paypal-button-container").innerHTML =
+          "<p style='color:red;'>An error occurred. Please try again.</p>";
+        alert("An error occurred during PayPal checkout. Please try again.");
+      });
+    },
+    onApprove: function(data, actions) {
+      return fetch('{% url "store:capture_paypal_order" %}', {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken":   "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ orderID: data.orderID })
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Error capturing PayPal order: " + response.statusText);
+        return response.json();
+      })
+      .then(details => {
+        if (details.success) {
+          window.location.href = "/order-success/" + details.order_id + "/";
+        } else {
+          alert("Payment failed. Try again.");
+        }
+      })
+      .catch(error => {
+        console.error("PayPal Capture Error:", error);
+        alert("An error occurred. Please try again.");
+      });
+    },
+    onError: function(err) {
+      console.error("PayPal Checkout Error:", err);
+      alert("An error occurred. Please try again.");
+    }
+  }).render('#paypal-button-container');
+
+});
+</script>
+{% endblock %}
