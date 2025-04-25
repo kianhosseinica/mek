@@ -53,6 +53,7 @@ INSTALLED_APPS = [
 
     'paypal.standard.ipn',
 
+
 ]
 
 MIDDLEWARE = [
@@ -112,18 +113,12 @@ DATABASES = {
 
 CACHES = {
     'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
-        }
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_cache_table',
     }
 }
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
-
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "default"
 
 
 
@@ -187,6 +182,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'store/static')]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -244,6 +240,5 @@ STALLION_API_TOKEN = os.getenv('STALLION_API_TOKEN')
 LOGIN_URL = '/users/login/'
 LOGIN_REDIRECT_URL = 'store:index'
 LOGOUT_REDIRECT_URL = '/users/login/'
-
 
 
