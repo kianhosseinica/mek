@@ -242,3 +242,7 @@ LOGIN_REDIRECT_URL = 'store:index'
 LOGOUT_REDIRECT_URL = '/users/login/'
 
 
+
+SECURE_SSL_REDIRECT = False  # must be False in local
+SESSION_COOKIE_SECURE = False  # optional but better for local
+CSRF_COOKIE_SECURE = False  # optional but better for local

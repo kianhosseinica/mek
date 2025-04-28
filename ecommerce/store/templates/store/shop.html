@@ -134,21 +134,6 @@
                                         <svg width="24" height="24" class="text-primary"><use xlink:href="#star-solid"></use></svg>
                                         {{ product.rating }}
                                     </span>
-                                    <span class="price">${{ product.price }}</span>
-                                    <div class="d-flex align-items-center justify-content-between" style="margin-top: auto;">
-                                        <div class="input-group product-qty">
-                                            <button type="button" class="quantity-left-minus btn btn-danger btn-number" data-type="minus">
-                                                <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
-                                            </button>
-                                            <input type="text" name="quantity" class="form-control input-number quantity" value="1">
-                                            <button type="button" class="quantity-right-plus btn btn-success btn-number" data-type="plus">
-                                                <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
-                                            </button>
-                                        </div>
-                                        <a href="{% url 'store:add_to_cart' product.id %}" class="nav-link">
-                                            Add to Cart <svg width="24" height="24"><use xlink:href="#cart"></use></svg>
-                                        </a>
-                                    </div>
                                 </div>
                             </div>
                         {% empty %}
@@ -185,7 +170,7 @@
         const items = Array.from(document.querySelectorAll('#product-grid .product-col'));
         const priceData = items.map(col => ({
             col,
-            price: parseFloat(col.querySelector('.price').textContent.replace(/[^0-9.]/g, '')) || 0
+            price: parseFloat(col.querySelector('.price')?.textContent?.replace(/[^0-9.]/g, '')) || 0
         }));
         const resultCount = document.getElementById('result-count');
 

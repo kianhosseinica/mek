@@ -58,55 +58,70 @@
                                 </div>
                             </div>
 
-<div class="product-price pt-3 pb-3">
-    <strong class="text-primary display-6 fw-bold">
-        {% if variation_details.discounted_price_single and variation_details.discounted_price_single < variation_details.price_single %}
-            <del>${{ variation_details.price_single }}</del>
-            <span class="text-success">${{ variation_details.discounted_price_single }}</span>
-        {% else %}
-            ${{ variation_details.price_single }}
-        {% endif %}
-    </strong> per item
-</div>
+                            <div class="product-price pt-3 pb-3">
+                                {% if user.is_authenticated %}
+                                    <strong class="text-primary display-6 fw-bold">
+                                        {% if variation_details.discounted_price_single and variation_details.discounted_price_single < variation_details.price_single %}
+                                            <del>${{ variation_details.price_single }}</del>
+                                            <span class="text-success">${{ variation_details.discounted_price_single }}</span>
+                                        {% else %}
+                                            ${{ variation_details.price_single }}
+                                        {% endif %}
+                                    </strong> per item
+                                {% else %}
+                                    <p class="text-danger fw-bold">Please login to see the price</p>
+                                {% endif %}
+                            </div>
 
-<p>{{ product.description }}</p>
+                            <p>{{ product.description }}</p>
 
-<div class="product-pricing-options">
-    <h6 class="text-uppercase text-dark">Purchase Options:</h6>
-    <ul class="list-unstyled">
-        <li>
-            <strong>Single:</strong>
-            {% if variation_details.discounted_price_single and variation_details.discounted_price_single < variation_details.price_single %}
-                <del>${{ variation_details.price_single }}</del>
-                <span class="text-success">${{ variation_details.discounted_price_single }}</span>
-            {% else %}
-                ${{ variation_details.price_single }}
-            {% endif %}
-            | <em>{{ variation_details.stock_single }} in stock</em>
-        </li>
-        <li>
-            <strong>Bag ({{ variation_details.bag_size }} pcs):</strong>
-            {% if variation_details.discounted_price_bag and variation_details.discounted_price_bag < variation_details.price_bag %}
-                <del>${{ variation_details.price_bag }}</del>
-                <span class="text-success">${{ variation_details.discounted_price_bag }}</span>
-            {% else %}
-                ${{ variation_details.price_bag }}
-            {% endif %}
-            | <em>{{ variation_details.available_bags }} bags available</em>
-        </li>
-        <li>
-            <strong>Box ({{ variation_details.box_size }} bags):</strong>
-            {% if variation_details.discounted_price_box and variation_details.discounted_price_box < variation_details.price_box %}
-                <del>${{ variation_details.price_box }}</del>
-                <span class="text-success">${{ variation_details.discounted_price_box }}</span>
-            {% else %}
-                ${{ variation_details.price_box }}
-            {% endif %}
-            | <em>{{ variation_details.available_boxes }} boxes available</em>
-        </li>
-    </ul>
-</div>
+                            <div class="product-pricing-options">
+                                <h6 class="text-uppercase text-dark">Purchase Options:</h6>
+                                {% if user.is_authenticated %}
+                                <ul class="list-unstyled">
+                                    {% if variation_details.price_single %}
+                                    <li>
+                                        <strong>Single:</strong>
+                                        {% if variation_details.discounted_price_single and variation_details.discounted_price_single < variation_details.price_single %}
+                                            <del>${{ variation_details.price_single }}</del>
+                                            <span class="text-success">${{ variation_details.discounted_price_single }}</span>
+                                        {% else %}
+                                            ${{ variation_details.price_single }}
+                                        {% endif %}
+                                        | <em>{{ variation_details.stock_single }} in stock</em>
+                                    </li>
+                                    {% endif %}
 
+                                    {% if variation_details.available_bags and variation_details.price_bag %}
+                                    <li>
+                                        <strong>Bag ({{ variation_details.bag_size }} pcs):</strong>
+                                        {% if variation_details.discounted_price_bag and variation_details.discounted_price_bag < variation_details.price_bag %}
+                                            <del>${{ variation_details.price_bag }}</del>
+                                            <span class="text-success">${{ variation_details.discounted_price_bag }}</span>
+                                        {% else %}
+                                            ${{ variation_details.price_bag }}
+                                        {% endif %}
+                                        | <em>{{ variation_details.available_bags }} bags available</em>
+                                    </li>
+                                    {% endif %}
+
+                                    {% if variation_details.available_boxes and variation_details.price_box %}
+                                    <li>
+                                        <strong>Box ({{ variation_details.box_size }} bags):</strong>
+                                        {% if variation_details.discounted_price_box and variation_details.discounted_price_box < variation_details.price_box %}
+                                            <del>${{ variation_details.price_box }}</del>
+                                            <span class="text-success">${{ variation_details.discounted_price_box }}</span>
+                                        {% else %}
+                                            ${{ variation_details.price_box }}
+                                        {% endif %}
+                                        | <em>{{ variation_details.available_boxes }} boxes available</em>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                                {% else %}
+                                    <p class="text-danger fw-bold">Please login to see the purchase options.</p>
+                                {% endif %}
+                            </div>
 
                             <div class="cart-wrap py-5">
                                 {% if available_colors %}
@@ -114,12 +129,14 @@
                                         <h6 class="item-title text-uppercase text-dark">Color:</h6>
                                         <ul class="select-list list-unstyled d-flex">
                                             {% for color in available_colors %}
-                                                <li class="select-item pe-3" data-val="{{ color }}" title="{{ color }}">
-                                                    <a href="?size={{ selected_size }}&color={{ color }}"
-                                                       class="btn btn-light {% if color == selected_color %}active{% endif %}">
-                                                        {{ color }}
-                                                    </a>
-                                                </li>
+                                                {% if color %}
+                                                    <li class="select-item pe-3" data-val="{{ color }}" title="{{ color }}">
+                                                        <a href="?size={{ selected_size }}&color={{ color }}"
+                                                           class="btn btn-light {% if color == selected_color %}active{% endif %}">
+                                                            {{ color }}
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
                                             {% endfor %}
                                         </ul>
                                     </div>
@@ -154,16 +171,16 @@
                                             <h6 class="text-uppercase text-dark">Choose Type:</h6>
                                             <select name="purchase_type" class="form-select mb-3">
                                                 <option value="single" selected>
-                                                    Single - ${{ variation_details.price_single }} each
+                                                    Single
                                                 </option>
                                                 {% if variation_details.available_bags > 0 %}
                                                     <option value="bag">
-                                                        Bag ({{ variation_details.bag_size }} pcs) - ${{ variation_details.price_bag }}
+                                                        Bag ({{ variation_details.bag_size }} pcs)  
                                                     </option>
                                                 {% endif %}
                                                 {% if variation_details.available_boxes > 0 %}
                                                     <option value="box">
-                                                        Box ({{ variation_details.box_size }} bags) - ${{ variation_details.price_box }}
+                                                        Box ({{ variation_details.box_size }} bags) 
                                                     </option>
                                                 {% endif %}
                                             </select>
@@ -186,35 +203,38 @@
                                         </form>
                                     </div>
                                 </div>
+                            </div> <!-- cart-wrap -->
+                        </div> <!-- product-info -->
+                    </div> <!-- col-lg-5 -->
+                </div> <!-- row -->
+            {% else %}
+            {# ------ Plain Product Part ------ #}
+            <div class="row g-5">
+                <div class="col-lg-7">
+                    {% if variation_details.image %}
+                        <img src="{{ variation_details.image }}" alt="{{ product.name }}" class="img-fluid">
+                    {% else %}
+                        <img src="{% static 'images/default-product.jpg' %}" alt="{{ product.name }}" class="img-fluid">
+                    {% endif %}
+                </div>
+                <div class="col-lg-5">
+                    <div class="product-info">
+                        <div class="element-header">
+                            <h2 itemprop="name" class="display-6">{{ product.name }}</h2>
+                            <div class="rating-container d-flex gap-0 align-items-center">
+                                <div class="rating" data-rating="{{ product.rating }}">
+                                    {% for i in "12345" %}
+                                        <svg width="32" height="32" class="{% if forloop.counter <= product.rating %}text-primary{% else %}text-secondary{% endif %}">
+                                            <use xlink:href="#star-solid"></use>
+                                        </svg>
+                                    {% endfor %}
+                                </div>
+                                <span class="rating-count">({{ product.rating|floatformat:1 }})</span>
                             </div>
                         </div>
-                    </div>
-                </div>
-            {% else %}
-                <div class="row g-5">
-                    <div class="col-lg-7">
-                        {% if variation_details.image %}
-                            <img src="{{ variation_details.image }}" alt="{{ product.name }}" class="img-fluid">
-                        {% else %}
-                            <img src="{% static 'images/default-product.jpg' %}" alt="{{ product.name }}" class="img-fluid">
-                        {% endif %}
-                    </div>
-                    <div class="col-lg-5">
-                        <div class="product-info">
-                            <div class="element-header">
-                                <h2 itemprop="name" class="display-6">{{ product.name }}</h2>
-                                <div class="rating-container d-flex gap-0 align-items-center">
-                                    <div class="rating" data-rating="{{ product.rating }}">
-                                        {% for i in "12345" %}
-                                            <svg width="32" height="32" class="{% if forloop.counter <= product.rating %}text-primary{% else %}text-secondary{% endif %}">
-                                                <use xlink:href="#star-solid"></use>
-                                            </svg>
-                                        {% endfor %}
-                                    </div>
-                                    <span class="rating-count">({{ product.rating|floatformat:1 }})</span>
-                                </div>
-                            </div>
-                            <div class="product-price pt-3 pb-3">
+
+                        <div class="product-price pt-3 pb-3">
+                            {% if user.is_authenticated %}
                                 <strong class="text-primary display-6 fw-bold">
                                     {% if variation_details.discounted_price_single %}
                                         <del>${{ variation_details.price_single }}</del>
@@ -223,36 +243,43 @@
                                         ${{ variation_details.price_single }}
                                     {% endif %}
                                 </strong> per item
-                            </div>
-                            <p>{{ product.description }}</p>
-                            <div class="cart-wrap py-5">
-                                <form method="POST" action="{% url 'store:add_to_cart' product.system_id %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="product_id" value="{{ product.id }}">
-                                    <div class="input-group product-qty" style="max-width: 150px;">
-                                        <span class="input-group-btn">
-                                            <button type="button" class="quantity-left-minus btn btn-light btn-number" data-type="minus">
-                                                <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
-                                            </button>
-                                        </span>
-                                        <input type="number" name="quantity" class="form-control input-number text-center" value="1" min="1" max="100">
-                                        <span class="input-group-btn">
-                                            <button type="button" class="quantity-right-plus btn btn-light btn-number" data-type="plus">
-                                                <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
-                                            </button>
-                                        </span>
-                                    </div>
-                                    <div class="qty-button d-flex flex-wrap pt-3">
-                                        <button type="submit" class="btn btn-dark py-3 px-4 text-uppercase mt-3">Add to Cart</button>
-                                    </div>
-                                </form>
-                            </div>
+                            {% else %}
+                                <p class="text-danger fw-bold">Please login to see the price</p>
+                            {% endif %}
                         </div>
+
+                        <p>{{ product.description }}</p>
+
+                        <div class="cart-wrap py-5">
+                            <form method="POST" action="{% url 'store:add_to_cart' product.system_id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                <div class="input-group product-qty" style="max-width: 150px;">
+                                    <span class="input-group-btn">
+                                        <button type="button" class="quantity-left-minus btn btn-light btn-number" data-type="minus">
+                                            <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
+                                        </button>
+                                    </span>
+                                    <input type="number" name="quantity" class="form-control input-number text-center" value="1" min="1" max="100">
+                                    <span class="input-group-btn">
+                                        <button type="button" class="quantity-right-plus btn btn-light btn-number" data-type="plus">
+                                            <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
+                                        </button>
+                                    </span>
+                                </div>
+                                <div class="qty-button d-flex flex-wrap pt-3">
+                                    <button type="submit" class="btn btn-dark py-3 px-4 text-uppercase mt-3">Add to Cart</button>
+                                </div>
+                            </form>
+                        </div>
+
                     </div>
                 </div>
+            </div>
             {% endif %}
-        </div>
+        </div> <!-- container-fluid -->
     </section>
+
 
     <section class="product-info-tabs py-5">
         <div class="container-fluid">

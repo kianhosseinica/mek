@@ -727,3 +727,26 @@ h1,h2,h3,h4,h5,h6 {
     width: 0;
   }
 }
+
+/* ensure the search-form container is the positioning context */
+.search-form {
+  position: relative;
+}
+
+/* position the results dropdown under the input */
+#search-results-dropdown {
+  position: absolute !important;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  z-index: 1050;  /* above other elements */
+}
+
+/* on mobile, inside the offcanvas we can let it flow naturally */
+@media (max-width: 991px) {
+  #search-results-dropdown {
+    position: static !important;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+}

@@ -28,11 +28,6 @@ class Cart(models.Model):
 
 
 class CartItem(models.Model):
-    """
-    Item inside a cart. If product_variation is set, we treat it
-    as a Variation item. If product_variation is None, we use product
-    (a plain Product without variations).
-    """
     cart = models.ForeignKey('cart.Cart', on_delete=models.CASCADE, related_name="items")
 
     product_variation = models.ForeignKey(
@@ -57,15 +52,8 @@ class CartItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
 
     def unit_price(self):
-        """
-        Return the correct unit price based on purchase_type and apply discount if applicable.
-        - If product_variation is not None, we handle single/bag/box from the variation.
-        - If product_variation is None but product is set, we treat it as a plain product
-          (generally single; or adapt if you want bag/box for plain products).
-        """
         user = self.cart.user
 
-        # 1) Variation branch
         if self.product_variation is not None:
             base_price = {
                 'single': self.product_variation.price_single,
@@ -73,7 +61,6 @@ class CartItem(models.Model):
                 'box': self.product_variation.price_box,
             }.get(self.purchase_type, self.product_variation.price_single)
 
-            # Attempt discount if user qualifies
             if user and hasattr(user, 'customer_type') and user.customer_type != 'regular':
                 price_rule = PriceRule.objects.filter(customer_type=user.customer_type).first()
                 if price_rule:
@@ -96,9 +83,8 @@ class CartItem(models.Model):
 
             return base_price
 
-        # 2) Plain product branch
         elif self.product is not None:
-            base_price = self.product.price  # Typically single logic only
+            base_price = self.product.price
 
             if user and hasattr(user, 'customer_type') and user.customer_type != 'regular':
                 price_rule = PriceRule.objects.filter(customer_type=user.customer_type).first()
@@ -119,28 +105,26 @@ class CartItem(models.Model):
 
             return base_price
 
-        # 3) If neither product_variation nor product is set
         logger.error("CartItem has neither product nor product_variation set!")
         return Decimal("0.00")
 
     def total_price(self):
-        """
-        Variation: if bag -> (unit_price * quantity / bag_size), box -> (unit_price * quantity / box_size),
-        otherwise -> unit_price * quantity.
-        Plain product: always unit_price * quantity.
-        """
         price = self.unit_price()
 
-        # Variation logic
         if self.product_variation:
             if self.purchase_type == "bag":
-                return price * (Decimal(self.quantity) / Decimal(self.product_variation.bag_size))
+                if self.product_variation.bag_size and self.product_variation.bag_size != 0:
+                    return price * (Decimal(self.quantity) / Decimal(self.product_variation.bag_size))
+                else:
+                    return Decimal("0.00")  # ❗ No division if bag_size missing or 0
             elif self.purchase_type == "box":
-                return price * (Decimal(self.quantity) / Decimal(self.product_variation.box_size))
+                if self.product_variation.box_size and self.product_variation.box_size != 0:
+                    return price * (Decimal(self.quantity) / Decimal(self.product_variation.box_size))
+                else:
+                    return Decimal("0.00")  # ❗ No division if box_size missing or 0
             else:
                 return price * Decimal(self.quantity)
         else:
-            # Plain product
             return price * Decimal(self.quantity)
 
     def __str__(self):

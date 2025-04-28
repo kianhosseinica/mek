@@ -1146,8 +1146,33 @@ def account(request):
     return render(request, 'store/account.html')
 
 # Contact Page
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import ContactMessage
+
 def contact(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+
+        if name and email and subject and message:
+            ContactMessage.objects.create(
+                name=name,
+                email=email,
+                phone=phone,
+                subject=subject,
+                message=message
+            )
+            messages.success(request, 'Your message has been sent successfully!')
+            return redirect('store:contact')  # ✅ MUST use 'store:contact' because app_name='store'
+        else:
+            messages.error(request, 'Please fill in all required fields.')
+
     return render(request, 'store/contact.html')
+
 
 # About Page
 def about(request):
@@ -2521,5 +2546,10 @@ def recommend_box(request):
         "best_box": best,
         "details": item_details
     })
+
+
+
+
+
 
 
