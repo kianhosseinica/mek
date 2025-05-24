@@ -1,3 +1,4 @@
+<!-- store/templates/store/order_success.html -->
 {% extends 'store/base.html' %}
 {% load static %}
 
@@ -9,7 +10,7 @@
           <nav class="breadcrumb fs-6">
             <a class="breadcrumb-item nav-link" href="#">Home</a>
             <a class="breadcrumb-item nav-link" href="#">Pages</a>
-            <span class="breadcrumb-item active" aria-current="page">Thank you</span>
+            <span class="breadcrumb-item active" aria-current="page">Thank you {{ order.first_name }} {{ order.last_name }}</span>
           </nav>
         </div>
       </div>
@@ -30,30 +31,30 @@
                     </tr>
                   </thead>
                   <tbody>
-                        {% for item in order_items %}
-                        <tr>
-                          <td scope="row" class="py-4">
-                            <div class="cart-info d-flex flex-wrap align-items-center">
-                              <div class="col-lg-3">
-                                <div class="card-image">
-                                  {% if item.product_variation and item.product_variation.product.image %}
-                                    <img src="{{ item.product_variation.product.image.url }}" 
-                                         alt="{{ item.product_variation.product.name }}" 
-                                         class="img-fluid">
-                                  {% elif item.product and item.product.image %}
-                                    <img src="{{ item.product.image.url }}" 
-                                         alt="{{ item.product.name }}" 
-                                         class="img-fluid">
-                                  {% else %}
-                                    <img src="{% static 'images/default-product.jpg' %}" 
-                                         alt="No image available" 
-                                         class="img-fluid">
-                                  {% endif %}
-                                </div>
-                              </div>
-                              <div class="col-lg-9">
-                                <div class="card-detail ps-3">
-                                  <h5 class="card-title">
+                    {% for item in order_items %}
+                    <tr>
+                      <td scope="row" class="py-4">
+                        <div class="cart-info d-flex flex-wrap align-items-center">
+                          <div class="col-lg-3">
+                            <div class="card-image">
+                              {% if item.product_variation and item.product_variation.product.image %}
+                                <img src="{{ item.product_variation.product.image.url }}" 
+                                     alt="{{ item.product_variation.product.name }}" 
+                                     class="img-fluid">
+                              {% elif item.product and item.product.image %}
+                                <img src="{{ item.product.image.url }}" 
+                                     alt="{{ item.product.name }}" 
+                                     class="img-fluid">
+                              {% else %}
+                                <img src="{% static 'images/default.jpg' %}"
+                                     alt="No image available" 
+                                     class="img-fluid">
+                              {% endif %}
+                            </div>
+                          </div>
+                          <div class="col-lg-9">
+                            <div class="card-detail ps-3">
+                              <h5 class="card-title">
                                 {% if item.product_variation %}
                                   <a href="{% url 'store:single-product' item.product_variation.product.slug %}" class="text-decoration-none">
                                     {{ item.product_variation.product.name }}
@@ -64,31 +65,29 @@
                                   </a>
                                 {% endif %}
                               </h5>
-                                  <p class="text-muted">
-                                    {% if item.product_variation %}
-                                      <strong>Size:</strong> {{ item.product_variation.size.name|default:"N/A" }} |
-                                      <strong>Color:</strong> {{ item.product_variation.color|default:"N/A" }} |
-                                    {% endif %}
-                                    <strong>Type:</strong> {{ item.get_purchase_type_display|default:"N/A" }}
+                              <p class="text-muted">
+                                {% if item.product_variation %}
+                                  <strong>Size:</strong> {{ item.product_variation.size.name|default:"N/A" }} |
+                                  <strong>Color:</strong> {{ item.product_variation.color|default:"N/A" }} |
+                                {% endif %}
+                                <strong>Type:</strong> {{ item.get_purchase_type_display|default:"N/A" }}
                               </p>
-                                </div>
-                              </div>
                             </div>
-                          </td>
-                          <td class="py-4">
-                            {{ item.quantity }}
-                          </td>
-                          <td class="py-4">
-                            <div class="total-price">
-                              <span class="money text-dark">${{ item.total_price|floatformat:2 }}</span>
-                            </div>
-                          </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                          <td colspan="3" class="text-center py-4">No items found in your order.</td>
-                        </tr>
-                        {% endfor %}
+                          </div>
+                        </div>
+                      </td>
+                      <td class="py-4">{{ item.quantity }}</td>
+                      <td class="py-4">
+                        <div class="total-price">
+                          <span class="money text-dark">${{ item.total_price|floatformat:2 }}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="3" class="text-center py-4">No items found in your order.</td>
+                    </tr>
+                    {% endfor %}
                   </tbody>
                 </table>
               </div>
@@ -101,7 +100,42 @@
                   <p><strong>Order Number:</strong> {{ order.order_id }}</p>
                   <p><strong>Customer:</strong> {{ order.first_name }} {{ order.last_name }}</p>
                   <p><strong>Email:</strong> {{ order.email }}</p>
+                  <p><strong>Order Date:</strong> {{ order.created_at|date:"F j, Y" }}</p>
+                  <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                  <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+                  <p><strong>Fulfillment Method:</strong> {{ order.get_fulfillment_method_display }}</p>
+                  {% if order.fulfillment_method == "delivery" %}
+                    <p><strong>Delivery Address:</strong>
+                      {% if order.shipping_address1 %}
+                        {{ order.shipping_address1 }}
+                        {% if order.shipping_address2 %}, {{ order.shipping_address2 }}{% endif %},
+                        {{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_zip_code }}
+                      {% else %}
+                        {{ order.address1 }}
+                        {% if order.address2 %}, {{ order.address2 }}{% endif %},
+                        {{ order.city }}, {{ order.state }} {{ order.zip_code }}
+                      {% endif %}
+                    </p>
+                    <p><strong>Delivery Phone:</strong>
+                      {% if order.shipping_phone %}
+                        {{ order.shipping_phone }}
+                      {% else %}
+                        {{ order.phone }}
+                      {% endif %}
+                    </p>
+                  {% else %}
+                    <p><strong>Pickup Address:</strong>
+                      {{ order.address1 }}
+                      {% if order.address2 %}, {{ order.address2 }}{% endif %},
+                      {{ order.city }}, {{ order.state }} {{ order.zip_code }}
+                    </p>
+                    <p><strong>Phone:</strong> {{ order.phone }}</p>
+                  {% endif %}
+                  {% if order.order_notes %}
+                    <p><strong>Order Notes:</strong> {{ order.order_notes }}</p>
+                  {% endif %}
                 </div>
+
                 <div class="total-price pb-5">
                   <table cellspacing="0" class="table text-uppercase">
                     <tbody>
@@ -113,6 +147,16 @@
                           </span>
                         </td>
                       </tr>
+                      {% if order.discount_amount > 0 %}
+                        <tr class="discount pt-2 pb-2 border-bottom">
+                          <th>Discount</th>
+                          <td data-title="Discount">
+                            <span class="price-amount amount text-dark ps-5">
+                              <bdi><span class="price-currency-symbol">-$</span>{{ order.discount_amount|floatformat:2 }}</bdi>
+                            </span>
+                          </td>
+                        </tr>
+                      {% endif %}
                       <tr class="tax pt-2 pb-2 border-bottom">
                         <th>Tax (13%)</th>
                         <td data-title="Tax">
@@ -121,10 +165,10 @@
                           </span>
                         </td>
                       </tr>
-                                            <tr class="tax pt-2 pb-2 border-bottom">
+                      <tr class="shipping pt-2 pb-2 border-bottom">
                         <th>Shipping Cost</th>
                         <td data-title="Shipping Cost">
-                            <span class="price-amount amount text-dark ps-5">
+                          <span class="price-amount amount text-dark ps-5">
                             <bdi><span class="price-currency-symbol">$</span>{{ order.shipping_cost|floatformat:2 }}</bdi>
                           </span>
                         </td>

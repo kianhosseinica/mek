@@ -1,3 +1,4 @@
+<!-- store/templates/store/emails/receipt_email.html -->
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -82,6 +83,9 @@
         margin: 5px 0;
         font-weight: bold;
       }
+      .totals p.discount {
+        color: #e74c3c; /* Red for discount */
+      }
       /* CTA BUTTON */
       .cta-button {
         display: inline-block;
@@ -128,19 +132,21 @@
     <div class="email-container">
       <!-- Header Section -->
       <div class="email-header">
-        <img src="https://mekcosupply.ca/static/img/Mekco-Supply-logo-300px.png" alt="Mekco Supply Logo">
+        <img src="{{ base_url }}{% static 'images/Mekco-Supply-logo-300px.png' %}" alt="Mekco Supply Logo">
         <h1>Order Receipt</h1>
       </div>
-      
+
       <!-- Body Section -->
       <div class="email-body">
         <h2>Thank You, {{ order.first_name }} {{ order.last_name }}!</h2>
         <div class="order-info">
           <p><strong>Order Number:</strong> {{ order.order_id }}</p>
-          <p><strong>Order Date:</strong> {{ order.created_at }}</p>
+          <p><strong>Order Date:</strong> {{ order.created_at|date:"F j, Y" }}</p>
           <p><strong>Email:</strong> {{ order.email }}</p>
+          <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+          <p><strong>Fulfillment:</strong> {{ order.get_fulfillment_method_display }}</p>
         </div>
-        
+
         <!-- Order Items Table -->
         <table class="order-table">
           <thead>
@@ -182,26 +188,43 @@
             {% endfor %}
           </tbody>
         </table>
-        
+
         <!-- Totals Section -->
         <div class="totals">
           <p>Subtotal: ${{ order.subtotal|floatformat:2 }}</p>
+          {% if order.discount_amount > 0 %}
+            <p class="discount">Discount: -${{ order.discount_amount|floatformat:2 }}</p>
+          {% endif %}
           <p>Tax (13%): ${{ order.tax_amount|floatformat:2 }}</p>
-            <p>Shipping : ${{ order.shipping_cost|floatformat:2 }}</p>
-
+          <p>Shipping: ${{ order.shipping_cost|floatformat:2 }}</p>
           <p>Total: ${{ order.total_price|floatformat:2 }}</p>
         </div>
-        
+
+        <!-- Shipping Address -->
+        <h3>Shipping Address</h3>
+        <div class="order-info">
+          <p>{{ order.shipping_first_name }} {{ order.shipping_last_name }}</p>
+          <p>{{ order.shipping_address1 }}{% if order.shipping_address2 %}, {{ order.shipping_address2 }}{% endif %}</p>
+          <p>{{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_zip_code }}</p>
+          <p>{{ order.shipping_email }}</p>
+        </div>
+
+        <!-- Order Notes -->
+        {% if order.order_notes %}
+          <h3>Order Notes</h3>
+          <p>{{ order.order_notes }}</p>
+        {% endif %}
+
         <!-- CTA Button -->
         <p style="text-align: center;">
-          <a href="{% url 'store:shop' %}" class="cta-button">Continue Shopping</a>
+          <a href="{{ base_url }}{% url 'store:shop' %}" class="cta-button">Continue Shopping</a>
         </p>
       </div>
       
       <!-- Footer Section -->
       <div class="email-footer">
-        <p>&copy; 2025 Mekco Supply. All rights reserved.</p>
-        <p>For questions, contact us at support@mekcosupply.ca</p>
+        <p>© 2025 Mekco Supply. All rights reserved.</p>
+        <p>For questions, contact us at <a href="mailto:support@mekcosupply.ca">support@mekcosupply.ca</a></p>
       </div>
     </div>
   </body>

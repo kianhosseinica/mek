@@ -27,14 +27,58 @@
           {% csrf_token %}
           <input type="hidden" name="verification_code" id="verification_code">
 
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
           <!-- Step 1 -->
           <div id="step1">
-            <div class="mb-3"><input type="text" id="phone_number" name="phone_number" class="form-control form-control-lg" placeholder="Phone Number" required></div>
-            <div class="mb-3"><input type="email" name="email" class="form-control form-control-lg" placeholder="Email Address" required></div>
-            <div class="mb-3"><input type="text" name="first_name" class="form-control form-control-lg" placeholder="First Name" required></div>
-            <div class="mb-3"><input type="text" name="last_name" class="form-control form-control-lg" placeholder="Last Name" required></div>
-            <div class="mb-3"><input type="password" name="password1" class="form-control form-control-lg" placeholder="Password" required></div>
-            <div class="mb-3"><input type="password" name="password2" class="form-control form-control-lg" placeholder="Confirm Password" required></div>
+            <div class="mb-3">
+              <input type="text" id="phone_number" name="phone_number" class="form-control form-control-lg" placeholder="Phone Number" required value="{{ form.phone_number.value|default_if_none:'' }}">
+              {% for error in form.phone_number.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="email" name="email" class="form-control form-control-lg" placeholder="Email Address" required value="{{ form.email.value|default_if_none:'' }}">
+              {% for error in form.email.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="text" name="first_name" class="form-control form-control-lg" placeholder="First Name" required value="{{ form.first_name.value|default_if_none:'' }}">
+              {% for error in form.first_name.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="text" name="last_name" class="form-control form-control-lg" placeholder="Last Name" required value="{{ form.last_name.value|default_if_none:'' }}">
+              {% for error in form.last_name.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="password" name="password1" class="form-control form-control-lg" placeholder="Password" required>
+              {% for error in form.password1.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="password" name="password2" class="form-control form-control-lg" placeholder="Confirm Password" required>
+              {% for error in form.password2.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
             <div class="d-grid gap-2"><button type="button" id="nextButton" class="btn btn-primary btn-lg">Next</button></div>
           </div>
 
@@ -53,14 +97,62 @@
 
           <!-- Step 3: Additional Info -->
           <div id="step2" style="display: none;">
-            <div class="mb-3"><input type="text" name="company" class="form-control form-control-lg" placeholder="Company (optional)"></div>
-            <div class="mb-3"><input type="date" name="birth_date" class="form-control form-control-lg"></div>
-            <div class="mb-3"><input type="text" name="country" class="form-control form-control-lg" placeholder="Country (optional)"></div>
-            <div class="mb-3"><input type="text" name="address" class="form-control form-control-lg" placeholder="Address (optional)"></div>
-            <div class="mb-3"><input type="text" name="address2" class="form-control form-control-lg" placeholder="Address Line 2 (optional)"></div>
-            <div class="mb-3"><input type="text" name="city" class="form-control form-control-lg" placeholder="City (optional)"></div>
-            <div class="mb-3"><input type="text" name="province" class="form-control form-control-lg" placeholder="Province (optional)"></div>
-            <div class="mb-3"><input type="text" name="postal_code" class="form-control form-control-lg" placeholder="Postal Code (optional)"></div>
+            <div class="mb-3">
+              <input type="text" name="company" class="form-control form-control-lg" placeholder="Company (optional)" value="{{ form.company.value|default_if_none:'' }}">
+              {% for error in form.company.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="date" name="birth_date" class="form-control form-control-lg" value="{{ form.birth_date.value|default_if_none:'' }}">
+              {% for error in form.birth_date.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="text" name="country" class="form-control form-control-lg" placeholder="Country (optional)" value="{{ form.country.value|default_if_none:'' }}">
+              {% for error in form.country.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="text" name="address" class="form-control form-control-lg" placeholder="Address (optional)" value="{{ form.address.value|default_if_none:'' }}">
+              {% for error in form.address.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="text" name="address2" class="form-control form-control-lg" placeholder="Address Line 2 (optional)" value="{{ form.address2.value|default_if_none:'' }}">
+              {% for error in form.address2.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="text" name="city" class="form-control form-control-lg" placeholder="City (optional)" value="{{ form.city.value|default_if_none:'' }}">
+              {% for error in form.city.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="text" name="province" class="form-control form-control-lg" placeholder="Province (optional)" value="{{ form.province.value|default_if_none:'' }}">
+              {% for error in form.province.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <input type="text" name="postal_code" class="form-control form-control-lg" placeholder="Postal Code (optional)" value="{{ form.postal_code.value|default_if_none:'' }}">
+              {% for error in form.postal_code.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+
             <div class="d-grid gap-2"><button type="submit" class="btn btn-success btn-lg">Complete Signup</button></div>
           </div>
         </form>
@@ -70,6 +162,7 @@
     </div>
   </div>
 </section>
+
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {

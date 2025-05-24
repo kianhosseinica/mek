@@ -1,3 +1,5 @@
+<!-- store/templates/store/checkout.html -->
+
 {% extends 'store/base.html' %}
 {% load static %}
 
@@ -19,12 +21,13 @@
   <div class="container-fluid">
     <form class="form-group" action="{% url 'store:checkout' %}" method="POST" id="checkoutForm">
       {% csrf_token %}
-      <!-- Hidden fields for totals coming from the front end -->
-      <input type="hidden" id="shipping_price" name="shipping_price" value="0.00">
-      <input type="hidden" id="subtotal"       name="subtotal"       value="{{ subtotal }}">
-      <input type="hidden" id="tax_amount"     name="tax_amount"     value="{{ tax_amount }}">
-      <input type="hidden" id="total"          name="total"          value="{{ total }}">
-      
+      <!-- Hidden fields for totals -->
+      <input type="hidden" id="subtotal" name="subtotal" value="{{ subtotal|floatformat:2 }}">
+      <input type="hidden" id="discount_amount" name="discount_amount" value="{{ discount_amount|floatformat:2 }}">
+      <input type="hidden" id="tax_amount" name="tax_amount" value="{{ tax_amount|floatformat:2 }}">
+      <input type="hidden" id="shipping_price" name="shipping_price" value="{{ shipping_cost|floatformat:2 }}">
+      <input type="hidden" id="total" name="total" value="{{ total|floatformat:2 }}">
+
       <div class="row d-flex flex-wrap">
         <!-- Billing Details Column -->
         <div class="col-lg-6">
@@ -166,8 +169,6 @@
             <span id="cart-length" style="display: none;">{{ cart_length }}</span>
             <span id="cart-width" style="display: none;">{{ cart_width }}</span>
             <span id="cart-height" style="display: none;">{{ cart_height }}</span>
-            <span id="hidden-subtotal" style="display: none;">{{ subtotal|floatformat:2 }}</span>
-            <span id="hidden-tax" style="display: none;">{{ tax_amount|floatformat:2 }}</span>
             <div class="total-price">
               <table cellspacing="0" class="table">
                 <tbody>
@@ -175,13 +176,19 @@
                     <th>Subtotal</th>
                     <td>$<bdi id="subtotalDisplay">{{ subtotal|floatformat:2 }}</bdi></td>
                   </tr>
+                  {% if discount_amount > 0 %}
+                    <tr class="discount border-bottom pt-2 pb-2 text-uppercase">
+                      <th>Discount</th>
+                      <td>-$<bdi id="discountDisplay">{{ discount_amount|floatformat:2 }}</bdi></td>
+                    </tr>
+                  {% endif %}
                   <tr class="tax border-bottom pt-2 pb-2 text-uppercase">
                     <th>HST (13%)</th>
                     <td>$<bdi id="taxDisplay">{{ tax_amount|floatformat:2 }}</bdi></td>
                   </tr>
                   <tr class="shipping border-bottom pt-2 pb-2 text-uppercase">
                     <th>Shipping</th>
-                    <td>$<bdi id="shipping-cost">0.00</bdi></td>
+                    <td>$<bdi id="shipping-cost">{{ shipping_cost|floatformat:2 }}</bdi></td>
                   </tr>
                   <tr class="order-total border-bottom pt-2 pb-2 text-uppercase">
                     <th>Total</th>
@@ -193,21 +200,6 @@
 
             <!-- Payment Options -->
             <div class="list-group mt-5 mb-3">
-              <label class="list-group-item">
-                <input class="form-check-input" type="radio" name="payment_method" value="bank"
-                       checked onclick="togglePayPal(false)">
-                <span><strong>Direct Bank Transfer</strong></span>
-              </label>
-              <label class="list-group-item">
-                <input class="form-check-input" type="radio" name="payment_method" value="check"
-                       onclick="togglePayPal(false)">
-                <span><strong>Check Payments</strong></span>
-              </label>
-              <label class="list-group-item">
-                <input class="form-check-input" type="radio" name="payment_method" value="pickup"
-                       onclick="togglePayPal(false)">
-                <span><strong>Pay at Store</strong></span>
-              </label>
               <label class="list-group-item">
                 <input class="form-check-input" type="radio" name="payment_method" value="paypal"
                        onclick="togglePayPal(true)">
@@ -243,19 +235,21 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("shipping-rate-section").style.display = show ? "block" : "none";
     if (!show) {
       document.getElementById("shipping-cost").textContent = "0.00";
+      document.getElementById("shipping_price").value = "0.00";
       recalcTotal();
     }
   }
   window.toggleShippingRate = toggleShippingRate;
 
-  // Recalculate final total using the hidden inputs.
+  // Recalculate final total using the hidden inputs, accounting for discount.
   function recalcTotal() {
-    let sub  = parseFloat(document.getElementById("subtotal").value)     || 0;
-    let tax  = parseFloat(document.getElementById("tax_amount").value)   || 0;
-    let ship = parseFloat(document.getElementById("shipping_price").value)|| 0;
-    let tot  = (sub + tax + ship).toFixed(2);
-    document.getElementById("final-total").textContent = tot;
-    document.getElementById("total").value         = tot;
+    let subtotal = parseFloat(document.getElementById("subtotal").value) || 0;
+    let discount = parseFloat(document.getElementById("discount_amount").value) || 0;
+    let tax = parseFloat(document.getElementById("tax_amount").value) || 0;
+    let shipping = parseFloat(document.getElementById("shipping_price").value) || 0;
+    let total = (subtotal - discount + tax + shipping).toFixed(2);
+    document.getElementById("final-total").textContent = total;
+    document.getElementById("total").value = total;
   }
   window.recalcTotal = recalcTotal;
 
@@ -269,73 +263,71 @@ document.addEventListener("DOMContentLoaded", function() {
       .then(data => {
         console.log("Received cart & box recommendation data:", data);
         let cartWeight = parseFloat(data.cart_weight) || 0;
-        let bestBox    = data.best_box;
-        let newLength  = bestBox ? parseFloat(bestBox.box_length_cm) : 0;
-        let newWidth   = bestBox ? parseFloat(bestBox.box_width_cm)   : 0;
-        let newHeight  = bestBox ? parseFloat(bestBox.box_height_cm)  : 0;
+        let bestBox = data.best_box;
+        let newLength = bestBox ? parseFloat(bestBox.box_length_cm) : 0;
+        let newWidth = bestBox ? parseFloat(bestBox.box_width_cm) : 0;
+        let newHeight = bestBox ? parseFloat(bestBox.box_height_cm) : 0;
 
-        // Example shippingPrice calc ($5 per box)
-        let boxesNeeded   = bestBox ? bestBox.boxes_needed : 0;
+        // Update hidden shipping_price (example: $5 per box)
+        let boxesNeeded = bestBox ? bestBox.boxes_needed : 0;
         let shippingPrice = (boxesNeeded * 5.00).toFixed(2);
-
-        // Update hidden shipping_price
         document.getElementById("shipping_price").value = shippingPrice;
 
-        // Build payload...
+        // Build payload for shipping rate API
         let useShipping = document.getElementById("diffShipping").checked;
         let name, company, address1, address2, city, province_code, postal_code, phone, email;
         if (useShipping) {
-          name         = (document.getElementById("shipping_fname").value||"")+" "+(document.getElementById("shipping_lname").value||"");
-          company      = document.getElementById("shipping_cname").value||"N/A";
-          address1     = document.getElementById("shipping_address1").value;
-          address2     = document.getElementById("shipping_address2").value;
-          city         = document.getElementById("shipping_city").value;
-          province_code= document.getElementById("shipping_state").value;
-          postal_code  = document.getElementById("shipping_zip").value;
-          phone        = document.getElementById("shipping_phone").value;
-          email        = document.getElementById("shipping_email").value;
+          name = (document.getElementById("shipping_fname").value || "") + " " + (document.getElementById("shipping_lname").value || "");
+          company = document.getElementById("shipping_cname").value || "N/A";
+          address1 = document.getElementById("shipping_address1").value;
+          address2 = document.getElementById("shipping_address2").value;
+          city = document.getElementById("shipping_city").value;
+          province_code = document.getElementById("shipping_state").value;
+          postal_code = document.getElementById("shipping_zip").value;
+          phone = document.getElementById("shipping_phone").value;
+          email = document.getElementById("shipping_email").value;
         } else {
-          name         = document.getElementById("fname").value+" "+document.getElementById("lname").value;
-          company      = document.getElementById("cname").value||"N/A";
-          address1     = document.getElementById("address1").value;
-          address2     = document.getElementById("address2").value;
-          city         = document.getElementById("city").value;
-          province_code= document.querySelector('select[name="state"]').value;
-          postal_code  = document.getElementById("zip").value;
-          phone        = document.getElementById("phone").value;
-          email        = document.getElementById("email").value;
+          name = document.getElementById("fname").value + " " + document.getElementById("lname").value;
+          company = document.getElementById("cname").value || "N/A";
+          address1 = document.getElementById("address1").value;
+          address2 = document.getElementById("address2").value;
+          city = document.getElementById("city").value;
+          province_code = document.querySelector('select[name="state"]').value;
+          postal_code = document.getElementById("zip").value;
+          phone = document.getElementById("phone").value;
+          email = document.getElementById("email").value;
         }
         let insured = document.getElementById("addInsurance").checked;
 
         let shippingDetails = {
           name, company, address1, address2, city, province_code,
-          postal_code, country_code:"CA", phone, email, is_residential:true
+          postal_code, country_code: "CA", phone, email, is_residential: true
         };
         let packageDetails = {
           weight: cartWeight, length: newLength, width: newWidth,
-          height: newHeight, size_unit:"cm", signature_confirmation:true,
-          insured, region:null,
-          tax_identifier:{tax_type:"IOSS",number:"IM1234567890",issuing_authority:"GB"},
-          items:[]
+          height: newHeight, size_unit: "cm", signature_confirmation: true,
+          insured, region: null,
+          tax_identifier: { tax_type: "IOSS", number: "IM1234567890", issuing_authority: "GB" },
+          items: []
         };
         let payload = Object.assign({}, packageDetails, shippingDetails);
 
         fetch("{% url 'store:get_rate' %}", {
-          method:"POST",
-          headers:{"Content-Type":"application/json","X-CSRFToken":"{{ csrf_token }}"},
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}" },
           body: JSON.stringify(payload)
         })
-        .then(r=>r.json())
-        .then(data=>{
+        .then(r => r.json())
+        .then(data => {
           let apiResp = data.shipping_api_response;
-          if(apiResp.success && apiResp.rates.length){
+          if (apiResp.success && apiResp.rates.length) {
             shippingRates = apiResp.rates;
-            let html = "<table class='table table-bordered'><thead><tr>"
-                     + "<th>Select</th><th>Option</th><th>Base Rate</th><th>Insurance</th><th>Total</th><th>Delivery Days</th>"
-                     + "</tr></thead><tbody>";
-            shippingRates.forEach((rate,i)=>{
+            let html = "<table class='table table-bordered'><thead><tr>" +
+                       "<th>Select</th><th>Option</th><th>Base Rate</th><th>Insurance</th><th>Total</th><th>Delivery Days</th>" +
+                       "</tr></thead><tbody>";
+            shippingRates.forEach((rate, i) => {
               let ins = "";
-              (rate.add_ons||[]).forEach(a=>{ if(a.type.toLowerCase()==="insurance") ins = parseFloat(a.cost).toFixed(2)+" "+a.currency; });
+              (rate.add_ons || []).forEach(a => { if (a.type.toLowerCase() === "insurance") ins = parseFloat(a.cost).toFixed(2) + " " + a.currency; });
               html += `<tr>
                         <td><input type='radio' name='shipping_option' value='${i}'></td>
                         <td>${rate.postage_type}</td>
@@ -352,7 +344,7 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("shipping-rate-result").textContent = "No shipping rate found.";
             document.getElementById("confirmShippingRateBtn").style.display = "none";
           }
-          // Best box display (unchanged)...
+          // Best box display
           let bestBoxHtml = "<h5>Best Box Recommendation</h5>";
           if (data.best_box && data.best_box.box_name) {
             bestBoxHtml += `<p><strong>Box:</strong> ${data.best_box.box_name}</p>
@@ -364,12 +356,12 @@ document.addEventListener("DOMContentLoaded", function() {
           }
           document.getElementById("bestBoxResult").innerHTML = bestBoxHtml;
         })
-        .catch(err=>{
+        .catch(err => {
           console.error("Error:", err);
           document.getElementById("shipping-rate-result").textContent = "Error fetching rate.";
         });
       })
-      .catch(err=>{
+      .catch(err => {
         console.error("Error fetching cart data:", err);
       });
   });
@@ -382,7 +374,6 @@ document.addEventListener("DOMContentLoaded", function() {
     if (rate) {
       let cost = parseFloat(rate.total).toFixed(2);
       document.getElementById("shipping-cost").textContent = cost;
-      // **update hidden**
       document.getElementById("shipping_price").value = cost;
       recalcTotal();
       this.style.display = "none";
@@ -394,16 +385,16 @@ document.addEventListener("DOMContentLoaded", function() {
   let paypalOrderCreated = false;
   function togglePayPal(show) {
     document.getElementById("paypal-button-container").style.display = show ? "block" : "none";
-    document.getElementById("placeOrderBtn").style.display             = show ? "none"  : "block";
+    document.getElementById("placeOrderBtn").style.display = show ? "none" : "block";
   }
   window.togglePayPal = togglePayPal;
 
   paypal.Buttons({
     style: {
       layout: 'vertical',
-      color:  'blue',
-      shape:  'rect',
-      label:  'paypal'
+      color: 'blue',
+      shape: 'rect',
+      label: 'paypal'
     },
     onClick: function(data, actions) {
       if (paypalOrderCreated) return actions.reject();
@@ -416,7 +407,7 @@ document.addEventListener("DOMContentLoaded", function() {
       formData.set("payment_method", "paypal");
       document.getElementById("paypal-button-container").innerHTML = "<p>Processing your order...</p>";
 
-      // 1) POST to /checkout to store session
+      // POST to /checkout to store session
       return fetch('{% url "store:checkout" %}', {
         method: 'POST',
         body: formData
@@ -429,19 +420,20 @@ document.addEventListener("DOMContentLoaded", function() {
         if (result.message !== "session_stored") {
           throw new Error("Session data not stored properly.");
         }
-        // 2) Build JSON payload from hidden inputs
+        // Build JSON payload for PayPal
         let payload = {
-          subtotal:       parseFloat(formData.get("subtotal")),
-          tax_amount:     parseFloat(formData.get("tax_amount")),
+          subtotal: parseFloat(formData.get("subtotal")),
+          discount_amount: parseFloat(formData.get("discount_amount")),
+          tax_amount: parseFloat(formData.get("tax_amount")),
           shipping_price: parseFloat(formData.get("shipping_price")),
-          total:          parseFloat(formData.get("total")),
-          currency:       "CAD"
+          total: parseFloat(formData.get("total")),
+          currency: "CAD"
         };
         return fetch('{% url "store:create_paypal_order" %}', {
           method: 'POST',
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken":   "{{ csrf_token }}"
+            "X-CSRFToken": "{{ csrf_token }}"
           },
           body: JSON.stringify(payload)
         });
@@ -452,7 +444,7 @@ document.addEventListener("DOMContentLoaded", function() {
       })
       .then(order => {
         if (order.id && order.approval_url) {
-          setTimeout(function(){
+          setTimeout(function() {
             window.location.replace(order.approval_url);
           }, 500);
           return order.id;
@@ -465,24 +457,23 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("paypal-button-container").innerHTML =
           "<p style='color:red;'>An error occurred. Please try again.</p>";
         alert("An error occurred during PayPal checkout. Please try again.");
+        paypalOrderCreated = false;
       });
     },
     onApprove: function(data, actions) {
-      return fetch('{% url "store:capture_paypal_order" %}', {
-        method: 'POST',
+      return fetch('{% url "store:capture_paypal_order" %}?paypal_order_id=' + data.orderID, {
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken":   "{{ csrf_token }}"
-        },
-        body: JSON.stringify({ orderID: data.orderID })
+          "X-CSRFToken": "{{ csrf_token }}"
+        }
       })
       .then(response => {
         if (!response.ok) throw new Error("Error capturing PayPal order: " + response.statusText);
         return response.json();
       })
       .then(details => {
-        if (details.success) {
-          window.location.href = "/order-success/" + details.order_id + "/";
+        if (details.message.includes("successful")) {
+          window.location.href = "/order-success/" + data.orderID + "/";
         } else {
           alert("Payment failed. Try again.");
         }
@@ -495,6 +486,7 @@ document.addEventListener("DOMContentLoaded", function() {
     onError: function(err) {
       console.error("PayPal Checkout Error:", err);
       alert("An error occurred. Please try again.");
+      paypalOrderCreated = false;
     }
   }).render('#paypal-button-container');
 

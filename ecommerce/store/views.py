@@ -166,11 +166,8 @@ def single_product(request, slug):
     selected_size = request.GET.get('size')
     logger.info("Raw selected_size from GET: %s", selected_size)
     if selected_size:
-        # Decode percent-encoded data then strip whitespace and extraneous quotes (if any)
         selected_size = unquote(selected_size).strip()
-        # Log the cleaned value before normalization
         logger.info("Cleaned selected_size before normalization: %s", selected_size)
-        # If our available sizes always end with a double quote, then ensure it too:
         if not selected_size.endswith('"'):
             selected_size = selected_size + '"'
             logger.info("Normalized selected_size to: %s", selected_size)
@@ -194,7 +191,7 @@ def single_product(request, slug):
             logger.info("Looking for variation with size='%s'", selected_size)
             selected_variation = product.variations.filter(size__name=selected_size).first()
 
-        # If no matching variation is found, try to default to the first variation for the selected size
+        # If no matching variation, default to the first variation for the selected size
         if not selected_variation:
             if selected_size:
                 variations_with_size = product.variations.filter(size__name=selected_size)
@@ -228,7 +225,7 @@ def single_product(request, slug):
         else:
             logger.warning("No variation selected for product %s", product.name)
 
-        # Re-filter available colors based on the (normalized) selected size
+        # Re-filter available colors based on the selected size
         if selected_size:
             available_colors = list(
                 product.variations.filter(size__name=selected_size)
@@ -258,20 +255,17 @@ def single_product(request, slug):
             price_box = selected_variation.price_box
 
             discounted_price_single = apply_discount(price_single, discount_percentage)
-            discounted_price_bag = (apply_discount(price_bag, discount_percentage)
-                                    if price_bag is not None else None)
-            discounted_price_box = (apply_discount(price_box, discount_percentage)
-                                    if price_box is not None else None)
+            discounted_price_bag = apply_discount(price_bag, discount_percentage) if price_bag else None
+            discounted_price_box = apply_discount(price_box, discount_percentage) if price_box else None
 
-            available_bags = (selected_variation.stock_single // selected_variation.bag_size) \
-                if selected_variation.bag_size > 0 else 0
-            available_boxes = (selected_variation.stock_single // selected_variation.box_size) \
-                if selected_variation.box_size > 0 else 0
+            available_bags = (selected_variation.stock_single // selected_variation.bag_size) if selected_variation.bag_size > 0 else 0
+            available_boxes = (selected_variation.stock_single // selected_variation.box_size) if selected_variation.box_size > 0 else 0
 
             variation_details = {
                 'price_single': price_single,
                 'discounted_price_single': discounted_price_single,
                 'stock_single': selected_variation.stock_single,
+                'stock_status': selected_variation.stock_status,  # Add stock_status
                 'price_bag': price_bag,
                 'discounted_price_bag': discounted_price_bag,
                 'bag_size': selected_variation.bag_size,
@@ -280,9 +274,7 @@ def single_product(request, slug):
                 'discounted_price_box': discounted_price_box,
                 'box_size': selected_variation.box_size,
                 'available_boxes': available_boxes,
-                'image': (selected_variation.image.url
-                          if selected_variation.image
-                          else (product.image.url if product.image else None))
+                'image': (selected_variation.image.url if selected_variation.image else (product.image.url if product.image else None))
             }
             if variation_details.get('image'):
                 selected_variation_images = [variation_details['image']]
@@ -314,6 +306,7 @@ def single_product(request, slug):
             'price_single': price_single,
             'discounted_price_single': discounted_price_single,
             'stock_single': product.quantity,
+            'stock_status': product.stock_status,  # Add stock_status for plain product
             'price_bag': None,
             'discounted_price_bag': None,
             'bag_size': None,
@@ -330,13 +323,14 @@ def single_product(request, slug):
 
     context = {
         'product': product,
-        'available_sizes': available_sizes,         # All sizes remain available
-        'available_colors': available_colors,         # Filtered by selected size if provided
+        'available_sizes': available_sizes,
+        'available_colors': available_colors,
         'selected_variation': selected_variation,
         'selected_size': selected_size,
         'selected_color': selected_color,
         'variation_details': variation_details,
         'selected_variation_images': selected_variation_images,
+        'product_stock_status': product.stock_status,  # Add product-level stock status
     }
     logger.info("Final context: %s", context)
     return render(request, 'store/single-product.html', context)
@@ -361,7 +355,7 @@ logger = logging.getLogger(__name__)
 @login_required
 def cart(request):
     """
-    Display the user's cart, enforce bag/box increments, and calculate totals.
+    Display the user's cart, enforce bag/box increments, and calculate totals including discounts.
     Uses Decimal for currency calculations.
     Handles both items with variations and plain product items.
     """
@@ -371,6 +365,8 @@ def cart(request):
     cart = None
     cart_items = []
     cart_total = Decimal("0.00")
+    cart_original_total = Decimal("0.00")
+    cart_total_discount = Decimal("0.00")
 
     try:
         # Determine the correct cart based on authentication or session.
@@ -431,21 +427,26 @@ def cart(request):
                     variation_color = "N/A"
 
                 logger.info(
-                    "📦 Product: %s | Variation: %s | Color: %s | Quantity: %d | Step: %d | Type: %s | Price: $%.2f",
+                    "📦 Product: %s | Variation: %s | Color: %s | Quantity: %d | Step: %d | Type: %s | Original Price: $%.2f | Discounted Price: $%.2f | Total Discount: $%.2f",
                     product_name,
                     variation_size,
                     variation_color,
                     item.quantity,
                     step,
                     item.purchase_type,
-                    item.total_price()
+                    item.total_original_price(),
+                    item.total_price(),
+                    item.total_discount()
                 )
 
             logger.info("🔢 Total number of single units in cart: %d", total_quantity)
 
-            # Calculate cart total using Decimal arithmetic.
-            cart_total = sum(item.total_price() for item in cart_items)
-            logger.info("💰 Cart Total: $%.2f", cart_total)
+            # Calculate cart totals.
+            cart_total = cart.total_price()
+            cart_original_total = cart.total_original_price()
+            cart_total_discount = cart.total_discount()
+            logger.info("💰 Cart Original Total: $%.2f | Discounted Total: $%.2f | Total Discount: $%.2f",
+                        cart_original_total, cart_total, cart_total_discount)
         else:
             logger.info("🛒 No cart items found.")
 
@@ -454,11 +455,15 @@ def cart(request):
         messages.error(request, "An error occurred while fetching your cart.")
         cart_items = []
         cart_total = Decimal("0.00")
+        cart_original_total = Decimal("0.00")
+        cart_total_discount = Decimal("0.00")
 
     return render(request, 'store/cart.html', {
         'cart': cart,
         'cart_items': cart_items,
         'cart_total': cart_total,
+        'cart_original_total': cart_original_total,
+        'cart_total_discount': cart_total_discount,
     })
 
 
@@ -524,14 +529,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# store/views.py
+
 @login_required
 def checkout(request):
     """Checkout View – Handles order creation & PayPal Smart Buttons.
-       Uses front-end–submitted totals (subtotal, tax_amount, shipping_price, total) for order creation.
+       Uses cart-based subtotal (original price), discount, and front-end submitted tax/shipping for order creation.
        Deducts stock_single based on the total cart quantity per product variation.
     """
     logger.info("==[CHECKOUT VIEW]== Start | Method: %s | User: %s", request.method, request.user)
-    TAX_RATE = Decimal("0.13")  # (Not used if totals come from front end)
+    TAX_RATE = Decimal("0.13")  # Used for initial render; front-end may override
 
     # --- Stock validation ---
     cart = Cart.objects.filter(user=request.user).first()
@@ -560,7 +567,7 @@ def checkout(request):
     # --- PayPal return branch ---
     paypal_order_id = request.GET.get("paymentId") or request.GET.get("paypal_order_id") or request.GET.get("token")
     payer_id = request.GET.get("PayerID")
-    token    = request.GET.get("token")
+    token = request.GET.get("token")
     logger.info("PayPal return params -> paypal_order_id=%s, payer_id=%s, token=%s", paypal_order_id, payer_id, token)
 
     if paypal_order_id and payer_id and token:
@@ -568,41 +575,55 @@ def checkout(request):
         order = Order.objects.filter(paypal_order_id=paypal_order_id, user=request.user).first()
 
         if not order:
-            logger.info("No existing order found. Using front-end totals from session checkout data.")
-            checkout_data   = request.session.get("checkout_data", {})
-            subtotal        = Decimal(checkout_data.get("subtotal",       "0.00"))
-            tax_amount      = Decimal(checkout_data.get("tax_amount",     "0.00"))
-            shipping_price  = Decimal(checkout_data.get("shipping_price", "0.00"))
-            total           = Decimal(checkout_data.get("total",          "0.00"))
-            logger.info("Front-end totals -> Subtotal=%.2f, Tax=%.2f, Shipping=%.2f, Total=%.2f",
-                        subtotal, tax_amount, shipping_price, total)
+            logger.info("No existing order found. Using session checkout data and cart for totals.")
+            checkout_data = request.session.get("checkout_data", {})
+            # Use cart for subtotal and discount
+            subtotal = cart.total_original_price() if cart else Decimal("0.00")
+            discount_amount = cart.total_discount() if cart else Decimal("0.00")
+            # Use front-end provided tax and shipping with safe Decimal conversion
+            try:
+                tax_amount = Decimal(checkout_data.get("tax_amount", "0.00"))
+            except (InvalidOperation, TypeError):
+                tax_amount = Decimal("0.00")
+                logger.warning("Invalid tax_amount in session data, defaulting to 0.00")
+            try:
+                shipping_price = Decimal(checkout_data.get("shipping_price", "0.00"))
+            except (InvalidOperation, TypeError):
+                shipping_price = Decimal("0.00")
+                logger.warning("Invalid shipping_price in session data, defaulting to 0.00")
+            # Calculate total: subtotal - discount + tax + shipping
+            total = (subtotal - discount_amount + tax_amount + shipping_price).quantize(Decimal("0.01"))
+            logger.info(
+                "Totals -> Subtotal=%.2f, Discount=%.2f, Tax=%.2f, Shipping=%.2f, Total=%.2f",
+                subtotal, discount_amount, tax_amount, shipping_price, total
+            )
 
-            # billing details
-            first_name  = checkout_data.get("firstname", request.user.first_name)
-            last_name   = checkout_data.get("lastname",  request.user.last_name)
-            company     = checkout_data.get("companyname", "")
-            country     = checkout_data.get("country",    "Canada")
-            address1    = checkout_data.get("address1",   "Not Provided")
-            address2    = checkout_data.get("address2",   "")
-            city        = checkout_data.get("city",       "Unknown")
-            state       = checkout_data.get("state",      "Unknown")
-            zip_code    = checkout_data.get("zip",        "00000")
-            phone       = checkout_data.get("phone",      "000-000-0000")
-            email       = checkout_data.get("email",      request.user.email)
-            notes       = checkout_data.get("order_notes","")
+            # Billing details
+            first_name = checkout_data.get("firstname", request.user.first_name)
+            last_name = checkout_data.get("lastname", request.user.last_name)
+            company = checkout_data.get("companyname", "")
+            country = checkout_data.get("country", "Canada")
+            address1 = checkout_data.get("address1", "Not Provided")
+            address2 = checkout_data.get("address2", "")
+            city = checkout_data.get("city", "Unknown")
+            state = checkout_data.get("state", "Unknown")
+            zip_code = checkout_data.get("zip", "00000")
+            phone = checkout_data.get("phone", "000-000-0000")
+            email = checkout_data.get("email", request.user.email)
+            notes = checkout_data.get("order_notes", "")
             fulfillment = checkout_data.get("fulfillment_method", "pickup")
 
-            # shipping details
+            # Shipping details
             ship_fn = checkout_data.get("shipping_firstname", "")
-            ship_ln = checkout_data.get("shipping_lastname",  "")
+            ship_ln = checkout_data.get("shipping_lastname", "")
             ship_co = checkout_data.get("shipping_companyname", "")
-            ship_a1 = checkout_data.get("shipping_address1","")
-            ship_a2 = checkout_data.get("shipping_address2","")
-            ship_city= checkout_data.get("shipping_city","")
-            ship_st = checkout_data.get("shipping_state","")
-            ship_zip= checkout_data.get("shipping_zip","")
-            ship_ph= checkout_data.get("shipping_phone","")
-            ship_em= checkout_data.get("shipping_email","")
+            ship_a1 = checkout_data.get("shipping_address1", "")
+            ship_a2 = checkout_data.get("shipping_address2", "")
+            ship_city = checkout_data.get("shipping_city", "")
+            ship_st = checkout_data.get("shipping_state", "")
+            ship_zip = checkout_data.get("shipping_zip", "")
+            ship_ph = checkout_data.get("shipping_phone", "")
+            ship_em = checkout_data.get("shipping_email", "")
 
             order = Order.objects.create(
                 user=request.user,
@@ -621,6 +642,7 @@ def checkout(request):
                 email=email,
                 order_notes=notes,
                 subtotal=subtotal,
+                discount_amount=discount_amount,
                 tax_amount=tax_amount,
                 total_price=total,
                 payment_method="paypal",
@@ -638,9 +660,9 @@ def checkout(request):
                 shipping_phone=ship_ph,
                 shipping_email=ship_em,
             )
-            logger.info("Order created successfully -> order_id=%s", order.order_id)
+            logger.info("Order created successfully -> order_id=%s, subtotal=%.2f, discount=%.2f", order.order_id, subtotal, discount_amount)
 
-            # create items & deduct stock
+            # Create items & deduct stock
             for item in cart.items.all():
                 OrderItem.objects.create(
                     order=order,
@@ -668,9 +690,8 @@ def checkout(request):
         else:
             logger.info("Order with PayPal ID %s already exists.", paypal_order_id)
 
-        # capture PayPal payment...
+        # Capture PayPal payment
         try:
-            # 1) Get an access token
             auth_resp = requests.post(
                 f"{PAYPAL_API_BASE}/v1/oauth2/token",
                 headers={"Accept": "application/json", "Accept-Language": "en_US"},
@@ -680,7 +701,6 @@ def checkout(request):
             auth_resp.raise_for_status()
             access_token = auth_resp.json().get("access_token")
 
-            # 2) Capture the order
             cap_resp = requests.post(
                 f"{PAYPAL_API_BASE}/v2/checkout/orders/{paypal_order_id}/capture",
                 headers={
@@ -701,81 +721,95 @@ def checkout(request):
 
         return redirect(reverse("store:order_success", args=[str(order.order_id)]))
 
-    # --- Standard POST branch (including PayPal session setup) ---
+    # --- Standard POST branch ---
     if request.method == "POST":
         logger.info("Handling POST request for user %s", request.user)
-        # billing
-        first_name   = request.POST.get("firstname")
-        last_name    = request.POST.get("lastname")
+        # Billing
+        first_name = request.POST.get("firstname")
+        last_name = request.POST.get("lastname")
         company_name = request.POST.get("companyname", "")
-        country      = request.POST.get("country", "Canada")
-        address1     = request.POST.get("address1")
-        address2     = request.POST.get("address2", "")
-        city         = request.POST.get("city")
-        state        = request.POST.get("state")
-        zip_code     = request.POST.get("zip")
-        phone        = request.POST.get("phone")
-        email        = request.POST.get("email")
-        notes        = request.POST.get("order_notes", "")
+        country = request.POST.get("country", "Canada")
+        address1 = request.POST.get("address1")
+        address2 = request.POST.get("address2", "")
+        city = request.POST.get("city")
+        state = request.POST.get("state")
+        zip_code = request.POST.get("zip")
+        phone = request.POST.get("phone")
+        email = request.POST.get("email")
+        notes = request.POST.get("order_notes", "")
         payment_method = request.POST.get("payment_method")
-        fulfillment    = request.POST.get("fulfillment_method", "pickup")
+        fulfillment = request.POST.get("fulfillment_method", "pickup")
 
-        # shipping (optional)
+        # Shipping (optional)
         ship_fn = request.POST.get("shipping_firstname", "")
-        ship_ln = request.POST.get("shipping_lastname",  "")
-        ship_co = request.POST.get("shipping_companyname","")
-        ship_a1 = request.POST.get("shipping_address1","")
-        ship_a2 = request.POST.get("shipping_address2","")
-        ship_city= request.POST.get("shipping_city","")
-        ship_st = request.POST.get("shipping_state","")
-        ship_zip= request.POST.get("shipping_zip","")
-        ship_ph= request.POST.get("shipping_phone","")
-        ship_em= request.POST.get("shipping_email","")
+        ship_ln = request.POST.get("shipping_lastname", "")
+        ship_co = request.POST.get("shipping_companyname", "")
+        ship_a1 = request.POST.get("shipping_address1", "")
+        ship_a2 = request.POST.get("shipping_address2", "")
+        ship_city = request.POST.get("shipping_city", "")
+        ship_st = request.POST.get("shipping_state", "")
+        ship_zip = request.POST.get("shipping_zip", "")
+        ship_ph = request.POST.get("shipping_phone", "")
+        ship_em = request.POST.get("shipping_email", "")
 
-        # ← pull the four hidden fields directly
-        subtotal       = Decimal(request.POST["subtotal"])
-        tax_amount     = Decimal(request.POST["tax_amount"])
-        shipping_price = Decimal(request.POST["shipping_price"])
-        total          = Decimal(request.POST["total"])
-        logger.info("POST totals from front end -> Subtotal=%.2f, Tax=%.2f, Shipping=%.2f, Total=%.2f",
-                    subtotal, tax_amount, shipping_price, total)
+        # Use cart for subtotal and discount
+        subtotal = cart.total_original_price() if cart else Decimal("0.00")
+        discount_amount = cart.total_discount() if cart else Decimal("0.00")
+        # Use front-end provided tax and shipping with safe Decimal conversion
+        try:
+            tax_amount = Decimal(request.POST.get("tax_amount", "0.00"))
+        except (InvalidOperation, TypeError):
+            tax_amount = Decimal("0.00")
+            logger.warning("Invalid tax_amount in POST data, defaulting to 0.00")
+        try:
+            shipping_price = Decimal(request.POST.get("shipping_price", "0.00"))
+        except (InvalidOperation, TypeError):
+            shipping_price = Decimal("0.00")
+            logger.warning("Invalid shipping_price in POST data, defaulting to 0.00")
+        # Calculate total
+        total = (subtotal - discount_amount + tax_amount + shipping_price).quantize(Decimal("0.01"))
+        logger.info(
+            "POST totals -> Subtotal=%.2f, Discount=%.2f, Tax=%.2f, Shipping=%.2f, Total=%.2f",
+            subtotal, discount_amount, tax_amount, shipping_price, total
+        )
 
-        # save for PayPal branch
+        # Save for PayPal branch
         request.session["checkout_data"] = {
-            "firstname":          first_name,
-            "lastname":           last_name,
-            "companyname":        company_name,
-            "country":            country,
-            "address1":           address1,
-            "address2":           address2,
-            "city":               city,
-            "state":              state,
-            "zip":                zip_code,
-            "phone":              phone,
-            "email":              email,
-            "order_notes":        notes,
+            "firstname": first_name,
+            "lastname": last_name,
+            "companyname": company_name,
+            "country": country,
+            "address1": address1,
+            "address2": address2,
+            "city": city,
+            "state": state,
+            "zip": zip_code,
+            "phone": phone,
+            "email": email,
+            "order_notes": notes,
             "fulfillment_method": fulfillment,
             "shipping_firstname": ship_fn,
-            "shipping_lastname":  ship_ln,
+            "shipping_lastname": ship_ln,
             "shipping_companyname": ship_co,
-            "shipping_address1":  ship_a1,
-            "shipping_address2":  ship_a2,
-            "shipping_city":      ship_city,
-            "shipping_state":     ship_st,
-            "shipping_zip":       ship_zip,
-            "shipping_phone":     ship_ph,
-            "shipping_email":     ship_em,
-            "subtotal":           str(subtotal),
-            "tax_amount":         str(tax_amount),
-            "shipping_price":     str(shipping_price),
-            "total":              str(total),
+            "shipping_address1": ship_a1,
+            "shipping_address2": ship_a2,
+            "shipping_city": ship_city,
+            "shipping_state": ship_st,
+            "shipping_zip": ship_zip,
+            "shipping_phone": ship_ph,
+            "shipping_email": ship_em,
+            "subtotal": str(subtotal),
+            "discount_amount": str(discount_amount),
+            "tax_amount": str(tax_amount),
+            "shipping_price": str(shipping_price),
+            "total": str(total),
         }
         logger.info("Stored checkout data in session: %s", request.session["checkout_data"])
 
         if payment_method == "paypal":
             return JsonResponse({"message": "session_stored"})
 
-        # non-PayPal order creation
+        # Non-PayPal order creation
         order = Order.objects.create(
             user=request.user,
             order_id=uuid.uuid4(),
@@ -792,6 +826,7 @@ def checkout(request):
             email=email,
             order_notes=notes,
             subtotal=subtotal,
+            discount_amount=discount_amount,
             tax_amount=tax_amount,
             total_price=total,
             payment_method=payment_method,
@@ -809,7 +844,7 @@ def checkout(request):
             shipping_phone=ship_ph,
             shipping_email=ship_em,
         )
-        logger.info("Created order immediately -> order_id=%s, user=%s", order.order_id, request.user)
+        logger.info("Created order immediately -> order_id=%s, subtotal=%.2f, discount=%.2f", order.order_id, subtotal, discount_amount)
         for item in cart.items.all():
             OrderItem.objects.create(
                 order=order,
@@ -838,14 +873,19 @@ def checkout(request):
 
     # --- GET branch: initial render ---
     logger.info("Handling GET request -> user=%s", request.user)
-    subtotal   = sum(item.total_price() for item in cart.items.all()) if cart.items.exists() else Decimal(0)
-    tax_amount = (subtotal * TAX_RATE).quantize(Decimal("0.01"))
-    total      = (subtotal + tax_amount).quantize(Decimal("0.01"))
+    subtotal = cart.total_original_price() if cart else Decimal("0.00")
+    discount_amount = cart.total_discount() if cart else Decimal("0.00")
+    discounted_subtotal = (subtotal - discount_amount).quantize(Decimal("0.01"))
+    tax_amount = (discounted_subtotal * TAX_RATE).quantize(Decimal("0.01"))
+    shipping_cost = Decimal("0.00")  # Default for GET
+    total = (discounted_subtotal + tax_amount).quantize(Decimal("0.01"))  # No shipping for initial render
     PAYPAL_CLIENT_ID = getattr(settings, "PAYPAL_CLIENT_ID", "sandbox_fallback_id_here")
     return render(request, "store/checkout.html", {
-        "subtotal":     subtotal,
-        "tax_amount":   tax_amount,
-        "total":        total,
+        "subtotal": subtotal,
+        "discount_amount": discount_amount,
+        "tax_amount": tax_amount,
+        "shipping_cost": shipping_cost,
+        "total": total,
         "PAYPAL_CLIENT_ID": PAYPAL_CLIENT_ID,
     })
 

@@ -1,3 +1,4 @@
+<!-- store/templates/store/wishlist.html -->
 {% extends 'store/base.html' %}
 {% load static %}
 
@@ -16,12 +17,10 @@
                             <span class="badge bg-primary">{{ wishlist_items|length }} items</span>
                         </h3>
                         <div class="d-flex gap-2">
-                            <input type="text" class="form-control" placeholder="Search wishlist...">
-                            <select class="form-select" style="width: auto;">
-                                <option>Sort by Name</option>
-                                <option>Sort by Price: Low to High</option>
-                                <option>Sort by Price: High to Low</option>
-                                <option>Sort by Date Added</option>
+                            <input type="text" class="form-control" id="wishlistSearch" placeholder="Search wishlist...">
+                            <select class="form-select" id="wishlistSort" style="width: auto;">
+                                <option value="name">Sort by Name</option>
+                                <option value="date_added">Sort by Date Added</option>
                             </select>
                         </div>
                     </div>
@@ -31,9 +30,11 @@
     </div>
 
     {% if wishlist_items %}
-    <div class="row g-4">
+    <div class="row g-4" id="wishlistItems">
         {% for item in wishlist_items %}
-        <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="col-lg-3 col-md-4 col-sm-6 wishlist-item"
+             data-name="{{ item.product.name|lower }}"
+             data-date-added="{{ item.added_at|date:'c' }}">
             <div class="card product-card">
                 <div class="position-relative">
                     <img src="{{ item.product.image.url }}"
@@ -41,32 +42,25 @@
                          alt="{{ item.product.name }}"
                          style="height: 200px; object-fit: cover; width: 100%;">
                     <a href="{% url 'users:remove_wishlist' item.product.id %}"
-                       class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2">
+                       class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 remove-wishlist"
+                       data-product-id="{{ item.product.id }}">
                         <i class="bi bi-heart-fill"></i>
                     </a>
                 </div>
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ item.product.name }}</h5>
+                    <h5 class="card-title">
+                        <a href="{% url 'store:single-product' item.product.slug %}" class="text-decoration-none">
+                            {{ item.product.name }}
+                        </a>
+                    </h5>
                     <p class="text-muted mb-2">
                         By {{ item.product.brand.name|default:"Unknown Brand" }}
                     </p>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-0">${{ item.product.price|floatformat:2 }}</h4>
-                        <span class="badge {% if item.product.quantity > 0 %} bg-success {% else %} bg-danger {% endif %}">
-                            {% if item.product.quantity > 0 %} In Stock {% else %} Out of Stock {% endif %}
-                        </span>
-                    </div>
                     <div class="mt-auto d-grid gap-2">
-                        {% if item.product.quantity > 0 %}
                         <a href="{% url 'store:add_to_cart' item.product.id %}" class="btn btn-primary">
                             <i class="bi bi-cart-plus"></i> Add to Cart
                         </a>
-                        {% else %}
-                        <button class="btn btn-primary" disabled>
-                            <i class="bi bi-cart-plus"></i> Out of Stock
-                        </button>
-                        {% endif %}
-                        <a href="{% url 'users:remove_wishlist' item.product.id %}" class="btn btn-outline-danger">
+                        <a href="{% url 'users:remove_wishlist' item.product.id %}" class="btn btn-outline-danger remove-wishlist" data-product-id="{{ item.product.id }}">
                             Remove
                         </a>
                     </div>
@@ -86,4 +80,88 @@
     </div>
     {% endif %}
 </div>
+
+<!-- JavaScript for Search, Sort, and Remove Functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('wishlistSearch');
+    const sortSelect = document.getElementById('wishlistSort');
+    const wishlistItems = document.querySelectorAll('.wishlist-item');
+    const wishlistContainer = document.getElementById('wishlistItems');
+    const emptyWishlist = document.getElementById('emptyWishlist');
+
+    // Search Functionality
+    searchInput.addEventListener('input', function () {
+        const searchTerm = this.value.toLowerCase();
+        let visibleItems = 0;
+        wishlistItems.forEach(item => {
+            const name = item.dataset.name;
+            if (name.includes(searchTerm)) {
+                item.style.display = '';
+                visibleItems++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        // Show/hide empty message
+        if (visibleItems === 0 && wishlistItems.length > 0) {
+            emptyWishlist.style.display = 'block';
+            wishlistContainer.style.display = 'none';
+        } else {
+            emptyWishlist.style.display = 'none';
+            wishlistContainer.style.display = '';
+        }
+    });
+
+    // Sort Functionality
+    sortSelect.addEventListener('change', function () {
+        const sortBy = this.value;
+        const itemsArray = Array.from(wishlistItems);
+        itemsArray.sort((a, b) => {
+            if (sortBy === 'name') {
+                return a.dataset.name.localeCompare(b.dataset.name);
+            } else if (sortBy === 'date_added') {
+                return new Date(b.dataset.dateAdded) - new Date(a.dataset.dateAdded);
+            }
+            return 0;
+        });
+        // Re-append sorted items
+        wishlistContainer.innerHTML = '';
+        itemsArray.forEach(item => wishlistContainer.appendChild(item));
+    });
+
+    // Remove Wishlist Item (AJAX for seamless removal)
+    document.querySelectorAll('.remove-wishlist').forEach(button => {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+            const productId = this.dataset.productId;
+            fetch(`{% url 'users:remove_wishlist' 0 %}`.replace('0', productId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.closest('.wishlist-item').remove();
+                    const remainingItems = document.querySelectorAll('.wishlist-item').length;
+                    document.querySelector('.badge.bg-primary').textContent = `${remainingItems} items`;
+                    if (remainingItems === 0) {
+                        wishlistContainer.style.display = 'none';
+                        emptyWishlist.style.display = 'block';
+                    }
+                } else {
+                    alert('Failed to remove item from wishlist.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while removing the item.');
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

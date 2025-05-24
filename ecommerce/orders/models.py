@@ -62,6 +62,12 @@ class Order(models.Model):
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Total discount applied to the order"
+    )
 
     # Payment Methods
     PAYMENT_METHODS = [
@@ -81,13 +87,17 @@ class Order(models.Model):
 
     # Order Status
     STATUS_CHOICES = [
-        ('Pending', 'Pending'),
-        ('Paid', 'Paid'),
-        ('Shipped', 'Shipped'),
-        ('Delivered', 'Delivered'),
-        ('Complete', 'Complete'),
-        ('Cancelled', 'Cancelled'),
+        ('Pending', 'Pending'),  # Order placed but not yet processed
+        ('Paid', 'Paid'),  # Payment received
+        ('Preparing', 'Preparing'),  # Order is being prepared
+        ('ReadyForPickup', 'Ready for Pickup'),  # For in-store pickup orders
+        ('ReadyToShip', 'Ready to Ship'),  # For delivery orders, packed and ready
+        ('Shipped', 'Shipped'),  # Shipped via courier
+        ('Delivered', 'Delivered'),  # Received by customer
+        ('Complete', 'Complete'),  # Final state after confirmation
+        ('Cancelled', 'Cancelled'),  # Order was cancelled
     ]
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
 
     # Timestamps
@@ -112,7 +122,7 @@ class Order(models.Model):
         first_item = self.items.first()
         if first_item and first_item.product_variation and first_item.product_variation.product.image:
             return first_item.product_variation.product.image.url
-        return "/static/images/default-product.jpg"  # Default placeholder
+        return "/static/images/default.jpg"  # Default placeholder
 
     def __str__(self):
         return f"Order {self.order_id} - {self.user.phone_number} - ${self.total_price:.2f}"

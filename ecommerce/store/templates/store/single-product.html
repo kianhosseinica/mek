@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block content %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <section id="selling-product" class="single-product mt-0 mt-md-5">
         <div class="container-fluid">
             <nav class="breadcrumb">
@@ -62,10 +63,10 @@
                                 {% if user.is_authenticated %}
                                     <strong class="text-primary display-6 fw-bold">
                                         {% if variation_details.discounted_price_single and variation_details.discounted_price_single < variation_details.price_single %}
-                                            <del>${{ variation_details.price_single }}</del>
-                                            <span class="text-success">${{ variation_details.discounted_price_single }}</span>
+                                            <del>${{ variation_details.price_single|floatformat:2 }}</del>
+                                            <span class="text-success">${{ variation_details.discounted_price_single|floatformat:2 }}</span>
                                         {% else %}
-                                            ${{ variation_details.price_single }}
+                                            ${{ variation_details.price_single|floatformat:2 }}
                                         {% endif %}
                                     </strong> per item
                                 {% else %}
@@ -83,38 +84,40 @@
                                     <li>
                                         <strong>Single:</strong>
                                         {% if variation_details.discounted_price_single and variation_details.discounted_price_single < variation_details.price_single %}
-                                            <del>${{ variation_details.price_single }}</del>
-                                            <span class="text-success">${{ variation_details.discounted_price_single }}</span>
+                                            <del>${{ variation_details.price_single|floatformat:2 }}</del>
+                                            <span class="text-success">${{ variation_details.discounted_price_single|floatformat:2 }}</span>
                                         {% else %}
-                                            ${{ variation_details.price_single }}
+                                            ${{ variation_details.price_single|floatformat:2 }}
                                         {% endif %}
-                                        | <em>{{ variation_details.stock_single }} in stock</em>
+                                        | <em {% if variation_details.stock_status != 'In Stock' %}class="text-danger"{% endif %}>
+                                            {{ variation_details.stock_status }} {% if variation_details.stock_status != 'In Stock' %}items in stock{% endif %}
+                                        </em>
                                     </li>
                                     {% endif %}
 
                                     {% if variation_details.available_bags and variation_details.price_bag %}
                                     <li>
-                                        <strong>Bag ({{ variation_details.bag_size }} pcs):</strong>
+                                        <strong>Bag ({{ variation_details.bag_size|floatformat:0 }} pcs):</strong>
                                         {% if variation_details.discounted_price_bag and variation_details.discounted_price_bag < variation_details.price_bag %}
-                                            <del>${{ variation_details.price_bag }}</del>
-                                            <span class="text-success">${{ variation_details.discounted_price_bag }}</span>
+                                            <del>${{ variation_details.price_bag|floatformat:2 }}</del>
+                                            <span class="text-success">${{ variation_details.discounted_price_bag|floatformat:2 }}</span>
                                         {% else %}
-                                            ${{ variation_details.price_bag }}
+                                            ${{ variation_details.price_bag|floatformat:2 }}
                                         {% endif %}
-                                        | <em>{{ variation_details.available_bags }} bags available</em>
+                                        | <em>{{ variation_details.available_bags|floatformat:0 }} bags available</em>
                                     </li>
                                     {% endif %}
 
                                     {% if variation_details.available_boxes and variation_details.price_box %}
                                     <li>
-                                        <strong>Box ({{ variation_details.box_size }} bags):</strong>
+                                        <strong>Box ({{ variation_details.box_size|floatformat:0 }} bags):</strong>
                                         {% if variation_details.discounted_price_box and variation_details.discounted_price_box < variation_details.price_box %}
-                                            <del>${{ variation_details.price_box }}</del>
-                                            <span class="text-success">${{ variation_details.discounted_price_box }}</span>
+                                            <del>${{ variation_details.price_box|floatformat:2 }}</del>
+                                            <span class="text-success">${{ variation_details.discounted_price_box|floatformat:2 }}</span>
                                         {% else %}
-                                            ${{ variation_details.price_box }}
+                                            ${{ variation_details.price_box|floatformat:2 }}
                                         {% endif %}
-                                        | <em>{{ variation_details.available_boxes }} boxes available</em>
+                                        | <em>{{ variation_details.available_boxes|floatformat:0 }} boxes available</em>
                                     </li>
                                     {% endif %}
                                 </ul>
@@ -160,7 +163,9 @@
 
                                 <div class="product-quantity pt-3">
                                     <div class="stock-number text-dark">
-                                        <em>{{ variation_details.stock_single }} items in stock</em>
+                                        <em {% if variation_details.stock_status != 'In Stock' %}class="text-danger"{% endif %}>
+                                            {{ variation_details.stock_status }} {% if variation_details.stock_status != 'In Stock' %}items in stock{% endif %}
+                                        </em>
                                     </div>
                                     <div class="stock-button-wrap">
                                         <form method="POST" action="{% url 'store:add_to_cart' selected_variation.variation_id %}">
@@ -170,18 +175,12 @@
                                             <input type="hidden" name="color" value="{{ selected_color }}">
                                             <h6 class="text-uppercase text-dark">Choose Type:</h6>
                                             <select name="purchase_type" class="form-select mb-3">
-                                                <option value="single" selected>
-                                                    Single
-                                                </option>
+                                                <option value="single" selected>Single</option>
                                                 {% if variation_details.available_bags > 0 %}
-                                                    <option value="bag">
-                                                        Bag ({{ variation_details.bag_size }} pcs)  
-                                                    </option>
+                                                    <option value="bag">Bag ({{ variation_details.bag_size|floatformat:0 }} pcs)</option>
                                                 {% endif %}
                                                 {% if variation_details.available_boxes > 0 %}
-                                                    <option value="box">
-                                                        Box ({{ variation_details.box_size }} bags) 
-                                                    </option>
+                                                    <option value="box">Box ({{ variation_details.box_size|floatformat:0 }} bags)</option>
                                                 {% endif %}
                                             </select>
                                             <div class="input-group product-qty" style="max-width: 150px;">
@@ -190,7 +189,7 @@
                                                         <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
                                                     </button>
                                                 </span>
-                                                <input type="number" name="quantity" class="form-control input-number text-center" value="1" min="1" max="100">
+                                                <input type="number" name="quantity" class="form-control input-number text-center" value="1" min="1" max="{{ variation_details.stock_single }}">
                                                 <span class="input-group-btn">
                                                     <button type="button" class="quantity-right-plus btn btn-light btn-number" data-type="plus">
                                                         <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
@@ -214,7 +213,7 @@
                     {% if variation_details.image %}
                         <img src="{{ variation_details.image }}" alt="{{ product.name }}" class="img-fluid">
                     {% else %}
-                        <img src="{% static 'images/default-product.jpg' %}" alt="{{ product.name }}" class="img-fluid">
+                        <img src="{% static 'images/default.jpg' %}" alt="{{ product.name }}" class="img-fluid">
                     {% endif %}
                 </div>
                 <div class="col-lg-5">
@@ -237,10 +236,10 @@
                             {% if user.is_authenticated %}
                                 <strong class="text-primary display-6 fw-bold">
                                     {% if variation_details.discounted_price_single %}
-                                        <del>${{ variation_details.price_single }}</del>
-                                        <span class="text-success">${{ variation_details.discounted_price_single }}</span>
+                                        <del>${{ variation_details.price_single|floatformat:2 }}</del>
+                                        <span class="text-success">${{ variation_details.discounted_price_single|floatformat:2 }}</span>
                                     {% else %}
-                                        ${{ variation_details.price_single }}
+                                        ${{ variation_details.price_single|floatformat:2 }}
                                     {% endif %}
                                 </strong> per item
                             {% else %}
@@ -251,35 +250,40 @@
                         <p>{{ product.description }}</p>
 
                         <div class="cart-wrap py-5">
-                            <form method="POST" action="{% url 'store:add_to_cart' product.system_id %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="product_id" value="{{ product.id }}">
-                                <div class="input-group product-qty" style="max-width: 150px;">
-                                    <span class="input-group-btn">
-                                        <button type="button" class="quantity-left-minus btn btn-light btn-number" data-type="minus">
-                                            <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
-                                        </button>
-                                    </span>
-                                    <input type="number" name="quantity" class="form-control input-number text-center" value="1" min="1" max="100">
-                                    <span class="input-group-btn">
-                                        <button type="button" class="quantity-right-plus btn btn-light btn-number" data-type="plus">
-                                            <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
-                                        </button>
-                                    </span>
+                            <div class="product-quantity pt-3">
+                                <div class="stock-number text-dark">
+                                    <em {% if variation_details.stock_status != 'In Stock' %}class="text-danger"{% endif %}>
+                                        {{ variation_details.stock_status }} {% if variation_details.stock_status != 'In Stock' %}items in stock{% endif %}
+                                    </em>
                                 </div>
-                                <div class="qty-button d-flex flex-wrap pt-3">
-                                    <button type="submit" class="btn btn-dark py-3 px-4 text-uppercase mt-3">Add to Cart</button>
-                                </div>
-                            </form>
+                                <form method="POST" action="{% url 'store:add_to_cart' product.system_id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                                    <div class="input-group product-qty" style="max-width: 150px;">
+                                        <span class="input-group-btn">
+                                            <button type="button" class="quantity-left-minus btn btn-light btn-number" data-type="minus">
+                                                <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
+                                            </button>
+                                        </span>
+                                        <input type="number" name="quantity" class="form-control input-number text-center" value="1" min="1" max="{{ variation_details.stock_single|default:100 }}">
+                                        <span class="input-group-btn">
+                                            <button type="button" class="quantity-right-plus btn btn-light btn-number" data-type="plus">
+                                                <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
+                                            </button>
+                                        </span>
+                                    </div>
+                                    <div class="qty-button d-flex flex-wrap pt-3">
+                                        <button type="submit" class="btn btn-dark py-3 px-4 text-uppercase mt-3">Add to Cart</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-
                     </div>
                 </div>
             </div>
             {% endif %}
         </div> <!-- container-fluid -->
     </section>
-
 
     <section class="product-info-tabs py-5">
         <div class="container-fluid">
@@ -312,8 +316,7 @@
                                                 <div class="rating-container d-flex align-items-center">
                                                     {% for i in "12345" %}
                                                         <svg width="24" height="24" class="{% if forloop.counter <= review.rating %}text-primary{% else %}text-secondary{% endif %}">
-                                                            <use xlink:href="#star-solid"></use>
-                                                        </svg>
+                                                            <use xlink:href="#star-solid"></use></svg>
                                                     {% endfor %}
                                                     <span class="rating-count">({{ review.rating|floatformat:1 }})</span>
                                                 </div>
@@ -324,108 +327,148 @@
                                                 <p>{{ review.comment }}</p>
                                             </div>
                                         </div>
-                                    </div>
-                                {% empty %}
-                                    <p>No reviews yet.</p>
-                                {% endfor %}
-                            </div>
+                                    {% empty %}
+                                        <p>No reviews yet.</p>
+                                    {% endfor %}
+                                </div>
 
-                            <div class="add-review mt-5">
-                                <h3>Add a Review</h3>
-                                <p>Your email address will not be published. Required fields are marked *</p>
-                                <form id="review-form" class="form-group" method="POST" action="">
-                                    {% csrf_token %}
-                                    <div class="pb-3">
-                                        <div class="review-rating">
-                                            <span>Your rating *</span>
-                                            <div class="rating-container d-flex align-items-center">
-                                                {% for i in "12345" %}
-                                                    <input type="radio" name="rating" value="{{ forloop.counter }}" id="rating-{{ forloop.counter }}" required>
-                                                    <label for="rating-{{ forloop.counter }}">
-                                                        <svg width="24" height="24" class="text-primary"><use xlink:href="#star-solid"></use></svg>
-                                                    </label>
-                                                {% endfor %}
+                                <div class="add-review mt-5">
+                                    <h3>Add a Review</h3>
+                                    <p>Your email address will not be published. Required fields are marked *</p>
+                                    <form id="review-form" class="form-group" method="POST" action="">
+                                        {% csrf_token %}
+                                        <div class="pb-3">
+                                            <div class="review-rating">
+                                                <span>Your rating *</span>
+                                                <div class="rating-container d-flex align-items-center">
+                                                    {% for i in "12345" %}
+                                                        <input type="radio" name="rating" value="{{ forloop.counter }}" id="rating-{{ forloop.counter }}" required>
+                                                        <label for="rating-{{ forloop.counter }}">
+                                                            <svg width="24" height="24" class="text-primary"><use xlink:href="#star-solid"></use></svg>
+                                                        </label>
+                                                    {% endfor %}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="pb-3">
-                                        <label>Your Review *</label>
-                                        <textarea class="form-control" name="comment" placeholder="Write your review here" required></textarea>
-                                    </div>
-                                    <div class="pb-3">
-                                        <label>Your Name *</label>
-                                        <input type="text" name="name" placeholder="Write your name here" class="form-control" value="{{ user.username }}" readonly>
-                                    </div>
-                                    <div class="pb-3">
-                                        <label>Your Email *</label>
-                                        <input type="email" name="email" placeholder="Write your email here" class="form-control" value="{{ user.email }}" readonly>
-                                    </div>
-                                    <button type="submit" class="btn btn-dark btn-large text-uppercase w-100">Submit</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="related-products" class="product-store position-relative py-5">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="section-header d-flex justify-content-between my-5">
-                        <h2 class="section-title">Related Products</h2>
-                        <div class="d-flex align-items-center">
-                            <div class="swiper-buttons">
-                                <button class="swiper-prev products-carousel-prev btn btn-primary">❮</button>
-                                <button class="swiper-next products-carousel-next btn btn-primary">❯</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="products-carousel swiper">
-                        <div class="swiper-wrapper">
-                            {% for related_product in related_products %}
-                                <div class="product-item swiper-slide">
-                                    <a href="#" class="btn-wishlist"><svg width="24" height="24"><use xlink:href="#heart"></use></svg></a>
-                                    <figure>
-                                        <a href="{% url 'store:single_product' related_product.slug %}" title="{{ related_product.name }}">
-                                            <img src="{{ related_product.image.url }}" class="tab-image" alt="{{ related_product.name }}">
-                                        </a>
-                                    </figure>
-                                    <h3>{{ related_product.name }}</h3>
-                                    <span class="qty">1 Unit</span>
-                                    <span class="rating">
-                                        <svg width="24" height="24" class="text-primary"><use xlink:href="#star-solid"></use></svg>
-                                        {{ related_product.rating }}
-                                    </span>
-                                    <span class="price">${{ related_product.price }}</span>
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <div class="input-group product-qty">
-                                            <span class="input-group-btn">
-                                                <button type="button" class="quantity-left-minus btn btn-danger btn-number" data-type="minus">
-                                                    <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
-                                                </button>
-                                            </span>
-                                            <input type="text" name="quantity" class="form-control input-number" value="1" min="1" max="{{ related_product.stock }}">
-                                            <span class="input-group-btn">
-                                                <button type="button" class="quantity-right-plus btn btn-success btn-number" data-type="plus">
-                                                    <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
-                                                </button>
-                                            </span>
+                                        <div class="pb-3">
+                                            <label>Your Review *</label>
+                                            <textarea class="form-control" name="comment" placeholder="Write your review here" required></textarea>
                                         </div>
-                                        <a href="{% url 'store:add_to_cart' related_product.id %}" class="nav-link">Add to Cart</a>
+                                        <div class="pb-3">
+                                            <label>Your Name *</label>
+                                            <input type="text" name="name" placeholder="Write your name here" class="form-control" value="{{ user.username }}" readonly>
+                                        </div>
+                                        <div class="pb-3">
+                                            <label>Your Email *</label>
+                                            <input type="email" name="email" placeholder="Write your email here" class="form-control" value="{{ user.email }}" readonly>
+                                        </div>
+                                        <button type="submit" class="btn btn-dark btn-large text-uppercase w-100">Submit</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="related-products" class="product-store position-relative py-5">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="section-header d-flex justify-content-between my-5">
+                                <h2 class="section-title">Related Products</h2>
+                                <div class="d-flex align-items-center">
+                                    <div class="swiper-buttons">
+                                        <button class="swiper-prev products-carousel-prev btn btn-primary">❮</button>
+                                        <button class="swiper-next products-carousel-next btn btn-primary">❯</button>
                                     </div>
                                 </div>
-                            {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="products-carousel swiper">
+                                <div class="swiper-wrapper">
+                                    {% for related_product in related_products %}
+                                        <div class="product-item swiper-slide">
+                                            <a href="#" class="btn-wishlist"><svg width="24" height="24"><use xlink:href="#heart"></use></svg></a>
+                                            <figure>
+                                                <a href="{% url 'store:single_product' related_product.slug %}" title="{{ related_product.name }}">
+                                                    <img src="{{ related_product.image.url }}" class="tab-image" alt="{{ related_product.name }}">
+                                                </a>
+                                            </figure>
+                                            <h3>{{ related_product.name }}</h3>
+                                            <span class="qty">1 Unit</span>
+                                            <span class="rating">
+                                                <svg width="24" height="24" class="text-primary"><use xlink:href="#star-solid"></use></svg>
+                                                {{ related_product.rating }}
+                                            </span>
+                                            <span class="price">${{ related_product.price }}</span>
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <form method="POST" action="{% url 'store:add_to_cart' related_product.id %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="product_id" value="{{ related_product.id }}">
+                                                    <div class="input-group product-qty">
+                                                        <span class="input-group-btn">
+                                                            <button type="button" class="quantity-left-minus btn btn-danger btn-number" data-type="minus">
+                                                                <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
+                                                            </button>
+                                                        </span>
+                                                        <input type="number" name="quantity" class="form-control input-number" value="1" min="1" max="{{ related_product.quantity }}">
+                                                        <span class="input-group-btn">
+                                                            <button type="button" class="quantity-right-plus btn btn-success btn-number" data-type="plus">
+                                                                <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
+                                                            </button>
+                                                        </span>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-dark text-uppercase mt-2">Add to Cart</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
+            </section>
+
+            <script>
+            $(document).ready(function(){
+                // Handle quantity increment and decrement
+                $('.quantity-right-plus').on('click', function(){
+                    var $input = $(this).closest('.input-group').find('.input-number');
+                    var val = parseInt($input.val(), 10);
+                    var max = parseInt($input.attr('max'), 10);
+                    if (!isNaN(val) && (isNaN(max) || val < max)) {
+                        $input.val(val + 1);
+                    }
+                });
+
+                $('.quantity-left-minus').on('click', function(){
+                    var $input = $(this).closest('.input-group').find('.input-number');
+                    var val = parseInt($input.val(), 10);
+                    var min = parseInt($input.attr('min'), 10);
+                    if (!isNaN(val) && val > min) {
+                        $input.val(val - 1);
+                    }
+                });
+
+                // Ensure input value stays within min/max when manually edited
+                $('.input-number').on('input', function(){
+                    var $input = $(this);
+                    var val = parseInt($input.val(), 10);
+                    var min = parseInt($input.attr('min'), 10);
+                    var max = parseInt($input.attr('max'), 10);
+                    if (isNaN(val)) {
+                        $input.val(min || 1);
+                    } else if (val < min) {
+                        $input.val(min);
+                    } else if (!isNaN(max) && val > max) {
+                        $input.val(max);
+                    }
+                });
+            });
+            </script>
 {% endblock %}

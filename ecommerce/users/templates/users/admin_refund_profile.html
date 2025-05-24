@@ -25,6 +25,17 @@
 <button class="btn btn-primary"><i class="bi bi-gear"></i> Settings</button>
 <button class="btn btn-outline-primary"><i class="bi bi-box-arrow-right"></i> Logout</button>
 </div>
+
+    {% if messages %}
+<div id="message-container">
+  {% for message in messages %}
+    <div class="message-bar {{ message.tags }}">
+      <span class="message-text">{{ message }}</span>
+      <div class="progress-line"></div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
 <div class="border-top pt-3">
 <div class="row text-start">
 <div class="col-12 mb-2">
@@ -230,7 +241,7 @@
          class="product-thumbnail img-fluid rounded"
          alt="{{ item.product.name }}">
   {% else %}
-    <img src="{% static 'images/default-product.jpg' %}"
+    <img src="{% static 'images/default.jpg' %}"
          class="product-thumbnail img-fluid rounded"
          alt="No image available">
   {% endif %}

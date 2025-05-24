@@ -1,3 +1,5 @@
+<!-- store/templates/store/order_success.html -->
+
 {% extends 'store/base.html' %}
 {% load static %}
 
@@ -45,7 +47,7 @@
                                      alt="{{ item.product.name }}" 
                                      class="img-fluid">
                               {% else %}
-                                <img src="{% static 'images/default-product.jpg' %}" 
+                                <img src="{% static 'images/default.jpg' %}"
                                      alt="No image available" 
                                      class="img-fluid">
                               {% endif %}
@@ -99,6 +101,9 @@
                   <p><strong>Order Number:</strong> {{ order.order_id }}</p>
                   <p><strong>Customer:</strong> {{ order.first_name }} {{ order.last_name }}</p>
                   <p><strong>Email:</strong> {{ order.email }}</p>
+                  <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                  <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+                  <p><strong>Fulfillment:</strong> {{ order.get_fulfillment_method_display }}</p>
                 </div>
                 <div class="total-price pb-5">
                   <table cellspacing="0" class="table text-uppercase">
@@ -111,6 +116,16 @@
                           </span>
                         </td>
                       </tr>
+                      {% if order.discount_amount > 0 %}
+                        <tr class="discount pt-2 pb-2 border-bottom">
+                          <th>Discount</th>
+                          <td data-title="Discount">
+                            <span class="price-amount amount text-dark ps-5">
+                              <bdi><span class="price-currency-symbol">-$</span>{{ order.discount_amount|floatformat:2 }}</bdi>
+                            </span>
+                          </td>
+                        </tr>
+                      {% endif %}
                       <tr class="tax pt-2 pb-2 border-bottom">
                         <th>Tax (13%)</th>
                         <td data-title="Tax">
@@ -119,15 +134,14 @@
                           </span>
                         </td>
                       </tr>
-                      <tr class="tax pt-2 pb-2 border-bottom">
+                      <tr class="shipping pt-2 pb-2 border-bottom">
                         <th>Shipping Cost</th>
                         <td data-title="Shipping Cost">
-                            <span class="price-amount amount text-dark ps-5">
+                          <span class="price-amount amount text-dark ps-5">
                             <bdi><span class="price-currency-symbol">$</span>{{ order.shipping_cost|floatformat:2 }}</bdi>
                           </span>
                         </td>
                       </tr>
-
                       <tr class="order-total pt-2 pb-2 border-bottom">
                         <th>Total</th>
                         <td data-title="Total">
@@ -163,10 +177,10 @@
                       <h3>Phones</h3>
                       <ul class="list-unstyled">
                         <li>
-                          <i class="icon icon-phone"></i>+1650-243-00023
+                          <i class="icon icon-phone"></i>+1 (905) 597-4597
                         </li>
                         <li>
-                          <i class="icon icon-phone"></i>+1650-243-00021
+                          <i class="icon icon-phone"></i>+1 (905) 597-4597
                         </li>
                       </ul>
                     </div>
@@ -177,7 +191,7 @@
                       <ul class="list-unstyled">
                         <li>
                           <i class="icon icon-envelope"></i>
-                          <a href="mailto:info@yourcompany.com">info@yourcompany.com</a>
+                          <a href="mailto:web@mekcosupply.com">web@mekcosupply.com</a>
                         </li>
                       </ul>
                     </div>
@@ -188,7 +202,7 @@
                       <ul class="list-unstyled">
                         <li>
                           <i class="icon icon-location"></i>
-                          <span>North Melbourne VIC 3051, Australia</span>
+                          <span>110 West Beaver Creek Rd Unit 16, Richmond Hill, ON L4B 1J9</span>
                         </li>
                       </ul>
                     </div>

@@ -31,9 +31,9 @@ def user_orders(request):
             elif first_item.product and first_item.product.image:  # ✅ Handle plain products
                 order.first_image = first_item.product.image.url
             else:
-                order.first_image = "/static/images/default-product.jpg"  # ✅ Fallback image
+                order.first_image = "/static/images/default.jpg"  # ✅ Fallback image
         else:
-            order.first_image = "/static/images/default-product.jpg"  # ✅ Ensure an image is always available
+            order.first_image = "/static/images/default.jpg"  # ✅ Ensure an image is always available
 
     context = {
         "orders": orders,

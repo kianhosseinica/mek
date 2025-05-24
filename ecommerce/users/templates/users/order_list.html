@@ -196,6 +196,11 @@
                 <p class="mb-1">Order ID: #{{ order.order_id }}</p>
                 <p class="mb-1">Purchase Date: {{ order.created_at|date:"Y-m-d" }}</p>
                 <p class="mb-1">Order Amount: ${{ order.total_price }}</p>
+                <p class="mb-1">
+                  <strong><i class="bi bi-credit-card-fill me-1"></i> Payment Method:</strong>
+                  <span class="badge bg-dark">{{ order.get_payment_method_display }}</span>
+                </p>
+
               </div>
               <div class="col-md-6">
                 <h6>Order Information</h6>
@@ -212,31 +217,58 @@
                 <p class="mb-3">Additional Notes: {{ order.additional_notes }}</p>
                   <p><strong>Delivery Method:</strong> {{ order.get_fulfillment_method_display }}</p>
 
-                      <div class="d-flex justify-content-center">
-                        <div class="card rounded-lg shadow-sm" style="max-width: 400px; width: 100%;">
-                          <div class="card-header bg-light text-center border-0">
-                            <h5 class="mb-0">Billing Address</h5>
-                          </div>
-                          <div class="card-body text-center">
-                            <p class="h6 mb-1">{{ order.first_name }} {{ order.last_name }}</p>
-                            {% if order.company_name %}
-                              <p class="mb-1">{{ order.company_name }}</p>
-                            {% endif %}
-                            <p class="mb-1">
-                              {{ order.address1 }}{% if order.address2 %}, {{ order.address2 }}{% endif %}
-                            </p>
-                            <p class="mb-1">{{ order.city }}, {{ order.state }} {{ order.zip_code }}</p>
-                            <p class="mb-1">
-                              <i class="bi bi-telephone-fill"></i>
-                              {{ order.phone }}
-                            </p>
-                            <p class="mb-0 text-muted">
-                              <i class="bi bi-envelope-fill"></i>
-                              {{ order.email }}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+<div class="d-flex justify-content-center">
+  <div class="card rounded-lg shadow-sm" style="max-width: 400px; width: 100%;">
+    <div class="card-header bg-light text-center border-0">
+      <h5 class="mb-0">
+        {% if order.fulfillment_method == "delivery" and order.shipping_address1 %}
+          Shipping Address
+        {% else %}
+          Billing Address
+        {% endif %}
+      </h5>
+    </div>
+    <div class="card-body text-center">
+      {% if order.fulfillment_method == "delivery" and order.shipping_address1 %}
+        <p class="h6 mb-1">{{ order.shipping_first_name }} {{ order.shipping_last_name }}</p>
+        {% if order.shipping_company %}
+          <p class="mb-1">{{ order.shipping_company }}</p>
+        {% endif %}
+        <p class="mb-1">
+          {{ order.shipping_address1 }}{% if order.shipping_address2 %}, {{ order.shipping_address2 }}{% endif %}
+        </p>
+        <p class="mb-1">{{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_zip_code }}</p>
+        <p class="mb-1">
+          <i class="bi bi-telephone-fill"></i>
+          {{ order.shipping_phone }}
+        </p>
+        <p class="mb-0 text-muted">
+          <i class="bi bi-envelope-fill"></i>
+          {{ order.shipping_email }}
+        </p>
+      {% else %}
+        <p class="h6 mb-1">{{ order.first_name }} {{ order.last_name }}</p>
+        {% if order.company_name %}
+          <p class="mb-1">{{ order.company_name }}</p>
+        {% endif %}
+        <p class="mb-1">
+          {{ order.address1 }}{% if order.address2 %}, {{ order.address2 }}{% endif %}
+        </p>
+        <p class="mb-1">{{ order.city }}, {{ order.state }} {{ order.zip_code }}</p>
+        <p class="mb-1">
+          <i class="bi bi-telephone-fill"></i>
+          {{ order.phone }}
+        </p>
+        <p class="mb-0 text-muted">
+          <i class="bi bi-envelope-fill"></i>
+          {{ order.email }}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
 
 
               </div>
@@ -267,7 +299,7 @@
                                class="product-thumbnail img-fluid rounded"
                                alt="{{ item.product.name }}">
                           {% else %}
-                          <img src="{% static 'images/default-product.jpg' %}"
+                          <img src="{% static 'images/default.jpg' %}"
                                class="product-thumbnail img-fluid rounded"
                                alt="No image available">
                           {% endif %}

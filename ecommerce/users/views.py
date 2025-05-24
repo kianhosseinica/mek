@@ -546,12 +546,27 @@ from django.db.models import Q
 from .models import Order
 
 
+# orders/views.py
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from .models import Order
+
+# orders/views.py
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from .models import Order
+from datetime import datetime, timedelta
+
+@login_required
 def order_list_view(request):
     qs = Order.objects.all().order_by('-created_at')
 
-    status_q   = request.GET.get('status')
-    method_q   = request.GET.get('method')
-    search_q   = request.GET.get('search')
+    status_q = request.GET.get('status')
+    method_q = request.GET.get('method')
+    search_q = request.GET.get('search')
+    filter_q = request.GET.get('filter', 'all')  # Default to 'all'
 
     if status_q and status_q != 'All':
         qs = qs.filter(status=status_q)
@@ -560,20 +575,40 @@ def order_list_view(request):
         qs = qs.filter(fulfillment_method=method_q)
 
     if search_q:
-        qs = qs.filter(
-            Q(order_id__icontains=search_q) |
-            Q(user__first_name__icontains=search_q) |
-            Q(user__last_name__icontains=search_q) |
-            Q(user__email__icontains=search_q)
-        )
+        search_q = search_q.strip()  # Remove leading/trailing whitespace
+        if search_q:
+            # Convert search term to lowercase for case-insensitive date matching
+            qs = qs.filter(
+                Q(order_id__icontains=search_q) |
+                Q(user__first_name__icontains=search_q) |
+                Q(user__last_name__icontains=search_q) |
+                Q(user__email__icontains=search_q) |
+                Q(created_at__icontains=search_q)  # Date-based search
+            )
+
+    # Date range filtering
+    if filter_q and filter_q != 'all':
+        today = datetime.now().date()
+        if filter_q == 'week':
+            cutoff_date = today - timedelta(days=7)
+        elif filter_q == 'month':
+            cutoff_date = today - timedelta(days=30)
+        elif filter_q == '3months':
+            cutoff_date = today - timedelta(days=90)
+        elif filter_q == '6months':
+            cutoff_date = today - timedelta(days=180)
+        elif filter_q == 'year':
+            cutoff_date = today - timedelta(days=365)
+        qs = qs.filter(created_at__gte=cutoff_date)
 
     context = {
         'orders': qs,
-        'status_choices': [('All','All')] + Order.STATUS_CHOICES,
-        'method_choices': [('All','All')] + Order.FULFILLMENT_OPTIONS,
+        'status_choices': [('All', 'All')] + Order.STATUS_CHOICES,
+        'method_choices': [('All', 'All')] + Order.FULFILLMENT_OPTIONS,
         'current_status': status_q or 'All',
         'current_method': method_q or 'All',
         'search_query': search_q or '',
+        'current_filter': filter_q or 'all',  # Track current filter
     }
     return render(request, 'users/order_list.html', context)
 
@@ -623,3 +658,48 @@ from django.shortcuts import render
 from .forms import ProfileUpdateForm
 
 
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import CustomUser
+import random
+
+def forgot_password_request(request):
+    if request.method == "POST":
+        email = request.POST.get("email", "").lower().strip()
+        try:
+            user = CustomUser.objects.get(email__iexact=email)
+            code = f"{random.randint(1000, 9999)}"
+            user.verification_code = code
+            user.save()
+
+            send_verification_code_email(user.email, code)
+            request.session["reset_email"] = email
+            messages.success(request, "✅ A 4-digit code has been sent to your email.")
+            return redirect("users:reset-password")
+        except CustomUser.DoesNotExist:
+            messages.error(request, "❌ This email is not registered.")
+    return render(request, "users/forgot_password.html")
+
+
+def reset_password_form(request):
+    email = request.session.get("reset_email", "")
+    if request.method == "POST":
+        code = request.POST.get("code")
+        new_password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+
+        try:
+            user = CustomUser.objects.get(email__iexact=email, verification_code=code)
+            if new_password != confirm_password:
+                messages.error(request, "❌ Passwords do not match.")
+            elif len(new_password) < 6:
+                messages.error(request, "❌ Password must be at least 6 characters.")
+            else:
+                user.set_password(new_password)
+                user.verification_code = None  # Clear code
+                user.save()
+                messages.success(request, "✅ Your password has been reset.")
+                return redirect("users:login")
+        except CustomUser.DoesNotExist:
+            messages.error(request, "❌ Invalid verification code.")
+    return render(request, "users/reset_password.html", {"email": email})

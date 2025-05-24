@@ -13,8 +13,9 @@ logger = logging.getLogger(__name__)
 # ✅ Order Item Inline (Displays Items Inside Order Admin)
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
-    extra = 1  # Show one empty form for adding items
-    readonly_fields = ('total_price',)
+    extra = 0
+    readonly_fields = ('total_price', 'price', 'quantity', 'purchase_type', 'product_variation', 'product')
+    can_delete = False
 
 
 # ✅ Refund Media Inline (For Admin Display)
@@ -35,14 +36,17 @@ class RefundMediaInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
         'order_id', 'user', 'full_name', 'email', 'phone',
-        'total_price', 'fulfillment', 'shipping_cost', 'status',
-        'created_at', 'paypal_capture', 'view_order_details'
+        'subtotal', 'discount_amount', 'tax_amount', 'shipping_cost', 'total_price',
+        'fulfillment', 'status', 'created_at', 'paypal_capture', 'view_order_details'
     )
     list_filter = ('status', 'payment_method', 'fulfillment_method', 'created_at')
-    search_fields = ('order_id', 'user__username', 'email', 'phone', 'paypal_capture_id', 'fulfillment_method')
+    search_fields = (
+        'order_id', 'user__username', 'email', 'phone',
+        'paypal_capture_id', 'fulfillment_method', 'discount_amount'
+    )
     readonly_fields = (
         'order_id', 'created_at', 'updated_at', 'subtotal', 'tax_amount',
-        'total_price', 'paypal_capture_id', 'shipping_cost',
+        'total_price', 'paypal_capture_id', 'shipping_cost', 'discount_amount',
         'shipping_first_name', 'shipping_last_name', 'shipping_address1',
         'shipping_address2', 'shipping_city', 'shipping_state',
         'shipping_zip_code', 'shipping_phone', 'shipping_email'
@@ -117,14 +121,12 @@ class OrderAdmin(admin.ModelAdmin):
             "❌ Selected orders have been marked as Cancelled and stock has been returned."
         )
 
-
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ('order', 'product_variation', 'purchase_type', 'quantity', 'price', 'total_price', 'is_refundable')
     list_filter = ('purchase_type', 'order__status', 'is_refundable')
     search_fields = ('order__order_id', 'product_variation__product__name')
     readonly_fields = ('total_price',)
-
 
 @admin.register(RefundRequest)
 class RefundRequestAdmin(admin.ModelAdmin):

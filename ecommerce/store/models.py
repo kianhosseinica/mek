@@ -35,7 +35,8 @@ class Category(MPTTModel):
     slug = models.SlugField(unique=True, blank=True, null=True)
     image = models.ImageField(upload_to='categories/', null=True, blank=True)
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
-
+    stock_threshold = models.PositiveIntegerField(default=10,
+                                                  help_text="Quantity above which products are shown as 'In Stock'")
     class MPTTMeta:
         order_insertion_by = ['name']
 
@@ -127,7 +128,12 @@ class Product(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField()
     image = models.ImageField(upload_to='products/', blank=True, null=True)
-
+    additional_info = models.TextField(
+        default="No additional information available.",
+        blank=True,
+        null=True,
+        help_text="Additional product details (defaults to 'No additional information available.')"
+    )
     # Pricing
     price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -176,6 +182,13 @@ class Product(models.Model):
         help_text="Default height in inches"
     )
 
+    @property
+    def stock_status(self):
+        """Return stock status based on quantity and category threshold."""
+        if self.quantity > self.category.stock_threshold:
+            return "In Stock"
+        return str(self.quantity)
+
     def save(self, *args, **kwargs):
         # Generate unique system_id if not set.
         if not self.system_id:
@@ -203,7 +216,13 @@ class ProductVariation(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variations")
     size = models.ForeignKey(Size, on_delete=models.CASCADE)
     color = models.CharField(max_length=50, blank=True, null=True)
-
+    default_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Default cost for a single item variation"
+    )
     # New unique identifier for each variation.
     variation_id = models.CharField(
         max_length=20,
@@ -262,6 +281,13 @@ class ProductVariation(models.Model):
                                     help_text="Box width in inches for this variation")
     box_height = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.0"),
                                      help_text="Box height in inches for this variation")
+
+    @property
+    def stock_status(self):
+        """Return stock status based on stock_single and category threshold."""
+        if self.stock_single > self.product.category.stock_threshold:
+            return "In Stock"
+        return str(self.stock_single)
 
     def save(self, *args, **kwargs):
         # Ensure variation_id is always set to a unique value.

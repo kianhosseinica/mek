@@ -1,0 +1,8 @@
+venv/
+*.pyc
+__pycache__/
+db.sqlite3
+media/
+staticfiles/
+.env
+database_dump.sql  # Optional: exclude if it has sensitive data

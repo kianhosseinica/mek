@@ -37,11 +37,25 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# store/emails.py
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
 def send_receipt_email(order):
     subject = f"Your Receipt for Order #{order.id}"
+    # Determine base URL for static files
+    base_url = getattr(settings, 'SITE_URL', 'https://mekcosupply.ca')  # Production URL
+    if settings.DEBUG:
+        base_url = 'http://localhost:8000'  # Development URL
     context = {
         'order': order,
         'order_items': order.items.all(),
+        'base_url': base_url,  # Add base_url for static file resolution
+        'site_name': 'Mekco Supply',  # Optional: for branding
     }
     try:
         message = render_to_string('store/receipt_email.txt', context)

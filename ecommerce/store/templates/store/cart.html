@@ -1,152 +1,164 @@
-    {% extends 'store/base.html' %}
-    {% load static %}
-    
-    {% block content %}
-      <section class="py-5 mb-5" style="background: url('{% static 'images/background-pattern.jpg' %}');">
-        <div class="container-fluid">
-          <div class="d-flex justify-content-between">
-            <h1 class="page-title pb-2">Cart</h1>
-            <nav class="breadcrumb fs-6">
-              <a class="breadcrumb-item nav-link" href="#">Home</a>
-              <a class="breadcrumb-item nav-link" href="#">Pages</a>
-              <span class="breadcrumb-item active" aria-current="page">Cart</span>
-            </nav>
-          </div>
-        </div>
-      </section>
-    
-    <section class="py-5">
-      <div class="container-fluid">
-        <div class="row g-5">
-          <div class="col-md-8">
-            <div class="table-responsive cart">
-              <form method="POST" action="{% url 'store:update_cart' %}" id="update-cart-form">
-                {% csrf_token %}
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th class="text-uppercase text-muted">Product</th>
-                      <th class="text-uppercase text-muted">Quantity</th>
-                      <th class="text-uppercase text-muted">Subtotal</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in cart_items %}
-                    <tr>
-                      <td>
-                        <div class="cart-info d-flex align-items-center">
-                          <div class="col-lg-3">
-                            <div class="card-image">
-                              {% if item.product_variation and item.product_variation.image %}
-                                <img src="{{ item.product_variation.image.url }}" alt="{{ item.product_variation.product.name }}" class="img-fluid">
-                              {% elif item.product and item.product.image %}
-                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="img-fluid">
-                              {% else %}
-                                <img src="/static/images/default-product.jpg" alt="No image available" class="img-fluid">
-                              {% endif %}
-                            </div>
-                          </div>
-                          <div class="col-lg-9 ps-3">
-                            <h5 class="card-title">
-                              {% if item.product_variation %}
-                                <a href="{% url 'store:single-product' item.product_variation.product.slug %}" class="text-decoration-none">
-                                  {{ item.product_variation.product.name }}
-                                </a>
-                              {% elif item.product %}
-                                <a href="{% url 'store:single-product' item.product.slug %}" class="text-decoration-none">
-                                  {{ item.product.name }}
-                                </a>
-                              {% endif %}
-                            </h5>
-                            <p class="text-muted">
-                              {% if item.product_variation %}
-                                <strong>Size:</strong> {{ item.product_variation.size.name }} |
-                                <strong>Color:</strong> {{ item.product_variation.color }} |
-                              {% endif %}
-                              <strong>Type:</strong> {{ item.get_purchase_type_display }}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <input type="hidden" name="item_id[]" value="{{ item.id }}">
-                        <div class="input-group product-qty w-50">
-                          <button type="button" class="btn btn-light btn-number" onclick="changeQuantity({{ item.id }}, 'decrease', {% if item.product_variation %}{{ item.product_variation.bag_size }}{% else %}1{% endif %}, {% if item.product_variation %}{{ item.product_variation.box_size }}{% else %}1{% endif %}, '{{ item.purchase_type }}')">
-                            <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
-                          </button>
-                          <input type="number" name="quantity[]" id="quantity-{{ item.id }}" value="{{ item.quantity }}"
-                                 min="{% if item.purchase_type == 'bag' and item.product_variation %}{{ item.product_variation.bag_size }}{% elif item.purchase_type == 'box' and item.product_variation %}{{ item.product_variation.box_size }}{% else %}1{% endif %}"
-                                 step="{% if item.purchase_type == 'bag' and item.product_variation %}{{ item.product_variation.bag_size }}{% elif item.purchase_type == 'box' and item.product_variation %}{{ item.product_variation.box_size }}{% else %}1{% endif %}"
-                                 class="form-control text-center">
-                          <button type="button" class="btn btn-light btn-number" onclick="changeQuantity({{ item.id }}, 'increase', {% if item.product_variation %}{{ item.product_variation.bag_size }}{% else %}1{% endif %}, {% if item.product_variation %}{{ item.product_variation.box_size }}{% else %}1{% endif %}, '{{ item.purchase_type }}')">
-                            <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
-                          </button>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="total-price">
-                          <span class="money text-dark">${{ item.total_price }}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="cart-remove">
-                          <a href="{% url 'store:remove_from_cart' item.id %}" class="text-danger">
-                            <svg width="24" height="24"><use xlink:href="#trash"></use></svg>
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                      <td colspan="4" class="text-center py-4">Your cart is empty.</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </form>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="cart-totals bg-grey py-5">
-              <h4 class="text-dark pb-4">Cart Total</h4>
-              <table class="table text-uppercase">
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+  <section class="py-5 mb-5" style="background: url('{% static 'images/background-pattern.jpg' %}');">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between">
+        <h1 class="page-title pb-2">Cart</h1>
+        <nav class="breadcrumb fs-6">
+          <a class="breadcrumb-item nav-link" href="#">Home</a>
+          <a class="breadcrumb-item nav-link" href="#">Pages</a>
+          <span class="breadcrumb-item active" aria-current="page">Cart</span>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-5">
+    <div class="container-fluid">
+      <div class="row g-5">
+        <div class="col-md-8">
+          <div class="table-responsive cart">
+            <form method="POST" action="{% url 'store:update_cart' %}" id="update-cart-form">
+              {% csrf_token %}
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-uppercase text-muted">Product</th>
+                    <th class="text-uppercase text-muted">Quantity</th>
+                    <th class="text-uppercase text-muted">Unit Price</th>
+                    <th></th>
+                  </tr>
+                </thead>
                 <tbody>
-                  <tr class="subtotal border-top border-bottom">
-                    <th>Subtotal</th>
+                  {% for item in cart_items %}
+                  <tr>
                     <td>
-                      <span class="price-amount text-dark">
-                        <bdi>$ {{ cart_total }}</bdi>
-                      </span>
+                      <div class="cart-info d-flex align-items-center">
+                        <div class="col-lg-3">
+                          <div class="card-image">
+                            {% if item.product_variation and item.product_variation.image %}
+                              <img src="{{ item.product_variation.image.url }}" alt="{{ item.product_variation.product.name }}" class="img-fluid">
+                            {% elif item.product and item.product.image %}
+                              <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="img-fluid">
+                            {% else %}
+                              <img src="{% static 'images/default.jpg' %}" alt="No image available" class="img-fluid">
+                            {% endif %}
+                          </div>
+                        </div>
+                        <div class="col-lg-9 ps-3">
+                          <h5 class="card-title">
+                            {% if item.product_variation %}
+                              <a href="{% url 'store:single-product' item.product_variation.product.slug %}" class="text-decoration-none">
+                                {{ item.product_variation.product.name }}
+                              </a>
+                            {% elif item.product %}
+                              <a href="{% url 'store:single-product' item.product.slug %}" class="text-decoration-none">
+                                {{ item.product.name }}
+                              </a>
+                            {% endif %}
+                          </h5>
+                          <p class="text-muted">
+                            {% if item.product_variation %}
+                              <strong>Size:</strong> {{ item.product_variation.size.name }} |
+                              <strong>Color:</strong> {{ item.product_variation.color }} |
+                            {% endif %}
+                            <strong>Type:</strong> {{ item.get_purchase_type_display }}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <input type="hidden" name="item_id[]" value="{{ item.id }}">
+                      <div class="input-group product-qty w-50">
+                        <button type="button" class="btn btn-light btn-number" onclick="changeQuantity({{ item.id }}, 'decrease', {% if item.product_variation %}{{ item.product_variation.bag_size }}{% else %}1{% endif %}, {% if item.product_variation %}{{ item.product_variation.box_size }}{% else %}1{% endif %}, '{{ item.purchase_type }}')">
+                          <svg width="16" height="16"><use xlink:href="#minus"></use></svg>
+                        </button>
+                        <input type="number" name="quantity[]" id="quantity-{{ item.id }}" value="{{ item.quantity }}"
+                               min="{% if item.purchase_type == 'bag' and item.product_variation %}{{ item.product_variation.bag_size }}{% elif item.purchase_type == 'box' and item.product_variation %}{{ item.product_variation.box_size }}{% else %}1{% endif %}"
+                               step="{% if item.purchase_type == 'bag' and item.product_variation %}{{ item.product_variation.bag_size }}{% elif item.purchase_type == 'box' and item.product_variation %}{{ item.product_variation.box_size }}{% else %}1{% endif %}"
+                               class="form-control text-center">
+                        <button type="button" class="btn btn-light btn-number" onclick="changeQuantity({{ item.id }}, 'increase', {% if item.product_variation %}{{ item.product_variation.bag_size }}{% else %}1{% endif %}, {% if item.product_variation %}{{ item.product_variation.box_size }}{% else %}1{% endif %}, '{{ item.purchase_type }}')">
+                          <svg width="16" height="16"><use xlink:href="#plus"></use></svg>
+                        </button>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="unit-price">
+                        {% if item.unit_discount > 0 %}
+                          <del>${{ item.original_unit_price|floatformat:2 }}</del>
+                          <span class="money text-success">${{ item.unit_price|floatformat:2 }}</span>
+                        {% else %}
+                          <span class="money text-dark">${{ item.original_unit_price|floatformat:2 }}</span>
+                        {% endif %}
+                      </div>
+                    </td>
+                    <td>
+                      <div class="cart-remove">
+                        <a href="{% url 'store:remove_from_cart' item.id %}" class="text-danger">
+                          <svg width="24" height="24"><use xlink:href="#trash"></use></svg>
+                        </a>
+                      </div>
                     </td>
                   </tr>
-                  <tr class="order-total border-bottom">
-                    <th>Total</th>
-                    <td>
-                      <span class="price-amount text-dark">
-                        <bdi>$ {{ cart_total }}</bdi>
-                      </span>
-                    </td>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-center py-4">Your cart is empty.</td>
                   </tr>
+                  {% endfor %}
                 </tbody>
               </table>
-              <div class="row g-2">
-                <div class="col-md-6">
-                  <button type="submit" form="update-cart-form" class="btn btn-dark w-100">Update Cart</button>
-                </div>
-                <div class="col-md-6">
-                  <a href="{% url 'store:shop' %}" class="btn btn-dark w-100">Continue Shopping</a>
-                </div>
-                <div class="col-md-12">
-                  <a href="{% url 'store:checkout' %}" class="btn btn-primary w-100">Proceed to Checkout</a>
-                </div>
+            </form>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="cart-totals bg-grey py-5">
+            <h4 class="text-dark pb-4">Cart Total</h4>
+            <table class="table text-uppercase">
+              <tbody>
+                <tr class="subtotal border-top border-bottom">
+                  <th>Original Total</th>
+                  <td>
+                    <span class="price-amount text-dark">
+                      <bdi>$ {{ cart_original_total|floatformat:2 }}</bdi>
+                    </span>
+                  </td>
+                </tr>
+                <tr class="subtotal border-bottom">
+                  <th>Total Discount</th>
+                  <td>
+                    <span class="price-amount text-success">
+                      <bdi>$ {{ cart_total_discount|floatformat:2 }}</bdi>
+                    </span>
+                  </td>
+                </tr>
+                <tr class="order-total border-bottom">
+                  <th>Final Total</th>
+                  <td>
+                    <span class="price-amount text-dark">
+                      <bdi>$ {{ cart_total|floatformat:2 }}</bdi>
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <button type="submit" form="update-cart-form" class="btn btn-dark w-100">Update Cart</button>
+              </div>
+              <div class="col-md-6">
+                <a href="{% url 'store:shop' %}" class="btn btn-dark w-100">Continue Shopping</a>
+              </div>
+              <div class="col-md-12">
+                <a href="{% url 'store:checkout' %}" class="btn btn-primary w-100">Proceed to Checkout</a>
               </div>
             </div>
           </div>
         </div>
       </div>
     </section>
-    
+
     <!-- JavaScript to enforce step-based quantity changes -->
     <script>
       function changeQuantity(itemId, action, bagSize, boxSize, purchaseType) {
@@ -165,50 +177,4 @@
         }
       }
     </script>
-    
-      <section class="py-5">
-        <div class="container-fluid">
-    
-          <div class="bg-secondary py-5 my-5 rounded-5"
-            style="background: url('{% static 'images/ad-image-4.png' %}') no-repeat;">
-            <div class="container my-5">
-              <div class="row">
-                <div class="col-md-6 p-5">
-                  <div class="section-header">
-                    <h2 class="section-title display-4">Get <span class="text-dark">25% Discount</span> on your first
-                      purchase</h2>
-                  </div>
-                  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Dictumst amet, metus, sit massa posuere
-                    maecenas. At tellus ut nunc amet vel egestas.</p>
-                </div>
-                <div class="col-md-6 p-5">
-                  <form>
-                    <div class="mb-3">
-                      <label for="name" class="form-label">Name</label>
-                      <input type="text" class="form-control form-control-lg" name="name" id="name" placeholder="Name">
-                    </div>
-                    <div class="mb-3">
-                      <label for="" class="form-label">Email</label>
-                      <input type="email" class="form-control form-control-lg" name="email" id="email"
-                        placeholder="abc@mail.com">
-                    </div>
-                    <div class="form-check form-check-inline mb-3">
-                      <label class="form-check-label" for="subscribe">
-                        <input class="form-check-input" type="checkbox" id="subscribe" value="subscribe">
-                        Subscribe to the newsletter</label>
-                    </div>
-                    <div class="d-grid gap-2">
-                      <button type="submit" class="btn btn-dark btn-lg">Submit</button>
-                    </div>
-                  </form>
-    
-                </div>
-    
-              </div>
-    
-            </div>
-          </div>
-    
-        </div>
-      </section>
-    {% endblock %}
+{% endblock %}

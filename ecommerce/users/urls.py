@@ -24,4 +24,7 @@ urlpatterns = [
     path('orders/<int:order_id>/', views.order_detail_view, name='order_detail'),
     path('change_status_ajax/<int:order_id>/', views.change_order_status_ajax, name='change_status_ajax'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
+
+    path("forgot-password/", views.forgot_password_request, name="forgot-password"),
+    path("reset-password/", views.reset_password_form, name="reset-password"),
 ]

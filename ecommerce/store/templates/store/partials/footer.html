@@ -2,9 +2,10 @@
 <footer class="py-5">
   <div class="container-fluid">
     <div class="row">
+      
       <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="footer-menu">
-          <img src="{% static 'images/Mekco-Supply-logo-300px.png' %}" alt="logo">
+          <img src="{% static 'images/Mekco-Supply-logo-300px.png' %}" alt="Mekco Supply Logo">
           <div class="social-links mt-5">
             <ul class="d-flex list-unstyled gap-2">
               <li>
@@ -39,101 +40,60 @@
 
       <div class="col-md-2 col-sm-6">
         <div class="footer-menu">
-          <h5 class="widget-title">Ultras</h5>
+          <h5 class="widget-title">Company</h5>
           <ul class="menu-list list-unstyled">
-            <li class="menu-item">
-              <a href="#" class="nav-link">About us</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Conditions </a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Our Journals</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Careers</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Affiliate Programme</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Ultras Press</a>
-            </li>
+            <li class="menu-item"><a href="#" class="nav-link">About Us</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Careers</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Terms & Conditions</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Affiliate Program</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Certifications</a></li>
           </ul>
         </div>
       </div>
+
+      <div class="col-md-2 col-sm-6">
+        <div class="footer-menu">
+          <h5 class="widget-title">Products</h5>
+          <ul class="menu-list list-unstyled">
+            <li class="menu-item"><a href="#" class="nav-link">Pipes & Fittings</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Valves</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Plumbing Tools</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Drainage Systems</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Water Supply Products</a></li>
+          </ul>
+        </div>
+      </div>
+
       <div class="col-md-2 col-sm-6">
         <div class="footer-menu">
           <h5 class="widget-title">Customer Service</h5>
           <ul class="menu-list list-unstyled">
-            <li class="menu-item">
-              <a href="#" class="nav-link">FAQ</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Contact</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Privacy Policy</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Returns & Refunds</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Cookie Guidelines</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Delivery Information</a>
-            </li>
+            <li class="menu-item"><a href="{% url 'store:contact' %}" class="nav-link">Contact Us</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">FAQ</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Returns & Refunds</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Shipping Information</a></li>
+            <li class="menu-item"><a href="#" class="nav-link">Privacy Policy</a></li>
           </ul>
         </div>
       </div>
-      <div class="col-md-2 col-sm-6">
-        <div class="footer-menu">
-          <h5 class="widget-title">Customer Service</h5>
-          <ul class="menu-list list-unstyled">
-            <li class="menu-item">
-              <a href="#" class="nav-link">FAQ</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Contact</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Privacy Policy</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Returns & Refunds</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Cookie Guidelines</a>
-            </li>
-            <li class="menu-item">
-              <a href="#" class="nav-link">Delivery Information</a>
-            </li>
-          </ul>
-        </div>
-      </div>
+
       <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="footer-menu">
-          <h5 class="widget-title">Subscribe Us</h5>
-          <p>Subscribe to our newsletter to get updates about our grand offers.</p>
-          <form class="d-flex mt-3 gap-0" action="index.html">
+          <h5 class="widget-title">Stay Updated</h5>
+          <p>Subscribe to our newsletter for plumbing news, product updates, and special offers.</p>
+          <form class="d-flex mt-3 gap-0" action="#">
             <input class="form-control rounded-start rounded-0 bg-light" type="email" placeholder="Email Address" aria-label="Email Address">
             <button class="btn btn-dark rounded-end rounded-0" type="submit">Subscribe</button>
           </form>
         </div>
       </div>
+
     </div>
   </div>
 </footer>
+
 <div id="footer-bottom">
   <div class="container-fluid">
-    <div class="row">
-      <div class="col-md-6 copyright">
-        <p>© 2023 Foodmart. All rights reserved.</p>
-      </div>
-      <div class="col-md-6 credit-link text-start text-md-end">
-        <p>Free HTML Template by <a href="https://templatesjungle.com/">TemplatesJungle</a></p>
-      </div>
-    </div>
+    <p class="text-center text-light small mb-0 py-2">&copy; {% now "Y" %} Mekco Supply Inc. All rights reserved.</p>
   </div>
 </div>

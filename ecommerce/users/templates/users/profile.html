@@ -190,8 +190,11 @@
                alt="{{ item.product.name }}"
                style="height: 200px; object-fit: cover;">
           <div class="card-body text-center">
-            <h6 class="card-title" style="font-size: 1rem;">{{ item.product.name }}</h6>
-            <p class="card-text text-muted" style="font-size: 0.9rem;">${{ item.product.price }}</p>
+            <h6 class="card-title" style="font-size: 1rem;">
+              <a href="{% url 'store:single-product' item.product.slug %}" class="text-decoration-none">
+                {{ item.product.name }}
+              </a>
+            </h6>
             <a href="{% url 'store:add_to_cart' item.product.id %}"
                class="btn btn-sm btn-primary w-100"
                style="font-size: 0.9rem;">Add to Cart</a>

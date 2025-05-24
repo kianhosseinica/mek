@@ -1,24 +1,45 @@
+<!-- store/templates/store/emails/receipt_email.txt -->
+
 Hello {{ order.first_name }} {{ order.last_name }},
 
 Thank you for your order!
 
 Order Number: {{ order.order_id }}
+Order Date: {{ order.created_at|date:"F j, Y" }}
 Email: {{ order.email }}
+Payment Method: {{ order.get_payment_method_display }}
+Fulfillment: {{ order.get_fulfillment_method_display }}
 
-Order Summary:
+Order Items:
 {% for item in order_items %}
-- {% if item.product_variation %}{{ item.product_variation.product.name }}{% elif item.product %}{{ item.product.name }}{% endif %} (x{{ item.quantity }}) - ${{ item.total_price|floatformat:2 }}
+- {% if item.product_variation %}{{ item.product_variation.product.name }} ({{ item.product_variation.size.name|default:"N/A" }}, {{ item.product_variation.color|default:"N/A" }}, {{ item.get_purchase_type_display|default:"Standard" }}){% elif item.product %}{{ item.product.name }} ({{ item.get_purchase_type_display|default:"Standard" }}){% endif %}
+  Quantity: {{ item.quantity }}
+  Price: ${{ item.total_price|floatformat:2 }}
 {% empty %}
 No items found in your order.
 {% endfor %}
 
+Order Summary:
 Subtotal: ${{ order.subtotal|floatformat:2 }}
+{% if order.discount_amount > 0 %}Discount: -${{ order.discount_amount|floatformat:2 }}{% endif %}
 Tax (13%): ${{ order.tax_amount|floatformat:2 }}
+Shipping: ${{ order.shipping_cost|floatformat:2 }}
 Total: ${{ order.total_price|floatformat:2 }}
 
-If you have any questions, please contact us.
+Shipping Address:
+{{ order.shipping_first_name }} {{ order.shipping_last_name }}
+{{ order.shipping_address1 }}{% if order.shipping_address2 %}, {{ order.shipping_address2 }}{% endif %}
+{{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_zip_code }}
+{{ order.shipping_email }}
 
-Thank you for shopping with us!
+{% if order.order_notes %}
+Order Notes:
+{{ order.order_notes }}
+{% endif %}
+
+If you have any questions, please contact us at support@mekcosupply.ca.
+
+Thank you for shopping with Mekco Supply!
 
 Best regards,
-Your Company Name
+Mekco Supply
