@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,7 +20,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ov6*i*zxi%+@9&6h1s$_=ssqp3yu6ge0ox0-f+5o+8+mf5rxh*'
 
 import os
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
@@ -65,7 +64,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+
 ]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 ROOT_URLCONF = 'ecommerce.urls'
 
@@ -163,7 +165,10 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'maxBytes': 1024*1024*5,  # 5MB
+            'backupCount': 5,
+
             'filename': os.path.join(BASE_DIR, 'logs/security.log'),
         },
     },
@@ -194,7 +199,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
@@ -227,8 +233,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # print("✅ PAYPAL_CLIENT_ID:", PAYPAL_CLIENT_ID)
@@ -252,7 +256,6 @@ LOGOUT_REDIRECT_URL = '/users/login/'
 
 
 
-SECURE_SSL_REDIRECT = False  # must be False in local
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 # ecommerce/settings.py
