@@ -102,8 +102,8 @@ load_dotenv()  # Load environment variables from a .env file
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'offer_db'),
-        'USER': os.getenv('DB_USER', 'offer_user'),
+        'NAME': os.getenv('DB_NAME', 'mekco_db'),
+        'USER': os.getenv('DB_USER', 'mekco_user'),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
