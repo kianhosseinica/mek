@@ -1722,6 +1722,16 @@ from django.http import HttpResponseBadRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import logging
+from decimal import Decimal, InvalidOperation
+import logging
+
+logger = logging.getLogger(__name__)
+
+def safe_decimal(value, default="0"):
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal(default)
 
 
 @csrf_exempt
@@ -1819,14 +1829,17 @@ def get_rate(request):
         logger.info("Received %d item(s) in payload.", len(items))
 
     # Try to get numeric values for weight and dimensions.
-    try:
-        weight = Decimal(str(data.get("weight", "1.0")))
-        length = Decimal(str(data.get("length", "12")))
-        width = Decimal(str(data.get("width", "9")))
-        height = Decimal(str(data.get("height", "4")))
-    except InvalidOperation as e:
-        logger.error("Invalid numeric value for dimensions: %s", e)
-        return JsonResponse({"error": "Invalid numeric value for weight or dimensions."}, status=400)
+    # Safe parsing of dimensions
+    weight = safe_decimal(data.get("weight"), default="1.0")
+    length = safe_decimal(data.get("length"), default="12")
+    width  = safe_decimal(data.get("width"), default="9")
+    height = safe_decimal(data.get("height"), default="4")
+    
+    # Optional: Log if bad input was replaced with defaults
+    for name, val in [("weight", weight), ("length", length), ("width", width), ("height", height)]:
+        if val == Decimal("0"):
+            logger.warning("⚠️ Field '%s' is invalid or missing. Default used.", name)
+
 
     # --- OPTIONAL: Adjust dimensions for heavy packages ---
     # For example, if weight > 10 lbs, override dimensions with default values that yield rates.
